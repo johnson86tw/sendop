@@ -1,5 +1,4 @@
 import { createConsola } from 'consola'
-import { toNetwork } from './network'
 
 const logger = createConsola({
 	level: 4,
@@ -28,7 +27,17 @@ export function setup(options?: { chainId?: string }) {
 
 	const chainId = options?.chainId || askForChainId()
 
-	const CLIENT_URL = `https://eth-${toNetwork(chainId)}.g.alchemy.com/v2/${ALCHEMY_API_KEY}`
+	const toChainName = (chainId: string): string => {
+		if (chainId === '11155111') {
+			return 'sepolia'
+		} else if (chainId === '7078815900') {
+			return 'mekong'
+		}
+
+		throw new Error('Invalid chainId')
+	}
+
+	const CLIENT_URL = `https://eth-${toChainName(chainId)}.g.alchemy.com/v2/${ALCHEMY_API_KEY}`
 	const BUNDLER_URL = `https://api.pimlico.io/v2/${chainId}/rpc?apikey=${PIMLICO_API_KEY}`
 
 	return {

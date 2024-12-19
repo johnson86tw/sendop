@@ -1,45 +1,64 @@
-import { Contract, getEntryPointContract, JsonRpcProvider } from '@/utils/ethers'
+import { Contract, getAddress, getEntryPointContract, JsonRpcProvider } from '@/utils/ethers'
 import { BundlerRpcProvider } from './bundler'
-import type { AccountRequestingValidator, PaymasterSource, Validator, Vendor } from './types'
+import type { AccountRequestingValidator, NetworkInfo, PaymasterSource, Validator, Vendor } from './types'
+import { sendop } from './sendop'
+import type { UserOpReceipt } from './utils/aa'
 
 type ConstructorOptions = {
-	chainId: string
-	clientUrl: string
-	bundlerUrl: string
+	networkInfo: NetworkInfo
 	validator: Validator | AccountRequestingValidator
 	supportedVendors: {
-		[key: string]: Vendor
+		[accountId: string]: Vendor
 	}
 	paymaster?: PaymasterSource
 }
 
 export class SAProvider {
-	readonly chainId: string
+	readonly networkInfo: NetworkInfo
 	readonly client: JsonRpcProvider
 	readonly bundler: BundlerRpcProvider
 	readonly validator: Validator | AccountRequestingValidator
 	readonly supportedVendors: {
-		[key: string]: Vendor
+		[accountId: string]: Vendor
 	}
 	readonly paymaster?: PaymasterSource
 	readonly entryPoint: Contract
 
-	readonly accountAddressToId: {
-		[address: string]: string
+	readonly accountAddressToVendor: {
+		[address: string]: Vendor
 	} = {}
 
 	constructor(options: ConstructorOptions) {
-		this.chainId = options.chainId
-		this.client = new JsonRpcProvider(options.clientUrl)
-		this.bundler = new BundlerRpcProvider(options.bundlerUrl)
+		this.networkInfo = options.networkInfo
+		this.client = new JsonRpcProvider(this.networkInfo.clientUrl)
+		this.bundler = new BundlerRpcProvider(this.networkInfo.bundlerUrl)
 		this.validator = options.validator
 		this.supportedVendors = options.supportedVendors
 		this.paymaster = options.paymaster
 		this.entryPoint = getEntryPointContract(this.client)
 	}
 
+	get chainId(): string {
+		return this.networkInfo.chainId
+	}
+
+	get clientUrl(): string {
+		return this.networkInfo.clientUrl
+	}
+
+	get bundlerUrl(): string {
+		return this.networkInfo.bundlerUrl
+	}
+
 	get storedAccounts(): { id: string; address: string }[] {
-		return Object.entries(this.accountAddressToId).map(([address, id]) => ({ id, address }))
+		return Object.entries(this.accountAddressToVendor).map(([address, vendor]) => ({
+			id: vendor.accountId(),
+			address,
+		}))
+	}
+
+	getVendor(address: string): Vendor {
+		return this.accountAddressToVendor[address]
 	}
 
 	async requestAccounts(): Promise<string[]> {
@@ -56,11 +75,33 @@ export class SAProvider {
 				this.client,
 			)
 			const accountId = await sa.accountId()
-			this.accountAddressToId[address] = accountId
+			this.accountAddressToVendor[getAddress(address)] = this.supportedVendors[accountId]
 		}
 
 		return accounts
 	}
 
-	sendCalls() {}
+	async send(params: {
+		from: string
+		calls: {
+			to: string
+			data: string
+			value: string
+		}[]
+		capabilities?: Record<string, any>
+	}): Promise<UserOpReceipt> {
+		const { from, calls, capabilities } = params
+		const vendor = this.getVendor(from)
+
+		const op = await sendop({
+			networkInfo: this.networkInfo,
+			validator: this.validator,
+			vendor,
+			from,
+			executions: calls,
+			paymaster: this.paymaster,
+		})
+
+		return await op.wait()
+	}
 }

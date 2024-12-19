@@ -6,7 +6,7 @@ import { setup } from 'test/utils/setup'
 const { CLIENT_URL } = setup({ chainId: '11155111' })
 
 describe('Kernel', () => {
-	describe('getInitializeData', () => {
+	describe('private getInitializeData', () => {
 		it('should return correct initialization data', async () => {
 			const kernel = new Kernel()
 			const validatorAddress = '0xd577C0746c19DeB788c0D698EcAf66721DC2F7A4'
@@ -28,7 +28,7 @@ describe('Kernel', () => {
 		})
 	})
 
-	describe('getCreateAccountData', () => {
+	describe('private getCreateAccountData', () => {
 		it('should return correct create account data', async () => {
 			const kernel = new Kernel()
 			const validatorAddress = '0xd577C0746c19DeB788c0D698EcAf66721DC2F7A4'

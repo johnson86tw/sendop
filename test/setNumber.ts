@@ -1,14 +1,17 @@
 import { sendop } from '@/sendop'
-import { ECDSAValidator } from '@/validators/ECDSAValidator'
-import { MyAccount } from '@/vendors/MyAccount'
+import { ECDSAValidator } from '@/validators/ecdsa_validator'
+import { MyAccount } from '@/vendors/my_account'
 import { Interface, toNumber, Wallet } from 'ethers'
-import { addresses, toNetwork } from './utils/network'
+import { addresses } from './utils/network'
 import { MyPaymaster } from './utils/myPaymaster'
 import { setup } from './utils/setup'
 
 const { logger, chainId, CLIENT_URL, BUNDLER_URL, PRIVATE_KEY } = setup()
 
-const sender = addresses[toNetwork(chainId)].MY_ACCOUNT
+const MY_ACCOUNT_ADDRESS = addresses[chainId].MY_ACCOUNT
+const VALIDATOR_ADDRESS = addresses[chainId].ECDSA_VALIDATOR
+const COUNTER_ADDRESS = addresses[chainId].COUNTER
+const CHARITY_PAYMASTER_ADDRESS = addresses[chainId].CHARITY_PAYMASTER
 
 const num = Math.floor(Math.random() * 10000)
 logger.info(`Setting number to ${num}`)
@@ -21,15 +24,15 @@ const op = await sendop({
 		bundlerUrl: BUNDLER_URL,
 	},
 	validator: new ECDSAValidator({
-		address: addresses[toNetwork(chainId)].ECDSA_VALIDATOR,
+		address: VALIDATOR_ADDRESS,
 		clientUrl: CLIENT_URL,
 		signer: new Wallet(PRIVATE_KEY),
 	}),
 	vendor: new MyAccount(),
-	from: sender,
+	from: MY_ACCOUNT_ADDRESS,
 	executions: [
 		{
-			to: addresses[toNetwork(chainId)].COUNTER,
+			to: COUNTER_ADDRESS,
 			data: new Interface(['function setNumber(uint256)']).encodeFunctionData('setNumber', [num]),
 			value: '0x0',
 		},
@@ -37,7 +40,7 @@ const op = await sendop({
 	paymaster: new MyPaymaster({
 		chainId,
 		clientUrl: CLIENT_URL,
-		paymasterAddress: addresses[toNetwork(chainId)].CHARITY_PAYMASTER,
+		paymasterAddress: CHARITY_PAYMASTER_ADDRESS,
 	}),
 })
 

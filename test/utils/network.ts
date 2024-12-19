@@ -1,17 +1,8 @@
 export const SESSION_PUBLIC_KEY = '0xb04662Edea81c9BD5717544514e7F2D14B148fF5'
 export const OWNER_ADDRESS = '0xd78B5013757Ea4A7841811eF770711e6248dC282'
 
-export const chainIdToNetwork: Record<string, string> = {
-	'11155111': 'sepolia',
-	'7078815900': 'mekong',
-}
-
-export function toNetwork(chainId: string): string {
-	return chainIdToNetwork[chainId]
-}
-
 export const addresses: Record<string, Record<string, string>> = {
-	sepolia: {
+	'11155111': {
 		COUNTER: '0x6310534eC64cd001Dd182Ca4cb359E9DB37d4378',
 		ENTRY_POINT: '0x0000000071727De22E5E9d8BAf0edAc6f37da032',
 		SMART_SESSION: '0xCF57f874F2fAd43379ac571bDea61B759baDBD9B',
@@ -30,7 +21,7 @@ export const addresses: Record<string, Record<string, string>> = {
 		MY_ACCOUNT: '0x67ce34bc421060b8594cdd361ce201868845045b',
 		KERNEL: '0x41f88637a749c815a31fe2867fbdf59af7b2fceb',
 	},
-	mekong: {
+	'7078815900': {
 		COUNTER: '0xa8d4452Ae282FC13521C6A4d91FE58bB49719EB4',
 		ENTRY_POINT: '0x0000000071727De22E5E9d8BAf0edAc6f37da032',
 		// TODO:
