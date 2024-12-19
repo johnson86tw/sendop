@@ -1,5 +1,5 @@
 import { hexlify, JsonRpcProvider, randomBytes } from '@/utils/ethers'
-import { Kernel } from './Kernel'
+import { Kernel } from './kernel'
 import { expect, describe, it } from 'vitest'
 import { setup } from 'test/utils/setup'
 

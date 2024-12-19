@@ -13,24 +13,26 @@ export type Execution = {
 	value: string
 }
 
-export interface ERC7579Account {
+export interface Vendor {
 	accountId(): string
 	getNonceKey(validator: string): Promise<string>
 	getCallData(from: string, executions: Execution[]): Promise<string>
-	getAddress(provider: JsonRpcProvider, ...args: any[]): Promise<string>
-	getInitCodeData(...args: any[]): {
+
+	getAddress?(provider: JsonRpcProvider, ...args: any[]): Promise<string>
+	getInitCodeData?(...args: any[]): {
 		factory: string
 		factoryData: string
 	}
-	getInstallModuleInitData(...args: any[]): Promise<string>
-	getUninstallModuleDeInitData(...args: any[]): Promise<string>
+	getInstallModuleInitData?(...args: any[]): Promise<string>
+	getUninstallModuleDeInitData?(...args: any[]): Promise<string>
 }
 
-export interface ERC7579Validator {
+export interface Validator {
 	address(): string
 	getDummySignature(): string
 	getSignature(userOpHash: string): Promise<string>
-	getAccounts(): Promise<string[]>
+
+	getAccounts?(): Promise<string[]>
 }
 
 export type PaymasterSource = PaymasterProvider | string

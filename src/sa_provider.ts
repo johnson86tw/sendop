@@ -1,17 +1,17 @@
 import { getEntryPointContract, JsonRpcProvider, Contract } from '@/utils/ethers'
 import { BundlerRpcProvider } from './bundler'
-import type { ERC7579Account, PaymasterSource } from './types'
-import type { ERC7579Validator } from './types'
+import type { Vendor, PaymasterSource } from './types'
+import type { Validator } from './types'
 
 type ConstructorOptions = {
 	chainId: string
 	clientUrl: string
 	bundlerUrl: string
 	validators: {
-		[key: string]: ERC7579Validator
+		[key: string]: Validator
 	}
 	vendors: {
-		[key: string]: ERC7579Account
+		[key: string]: Vendor
 	}
 	paymaster?: PaymasterSource
 }
@@ -21,10 +21,10 @@ export class SAProvider {
 	readonly client: JsonRpcProvider
 	readonly bundler: BundlerRpcProvider
 	readonly validators: {
-		[key: string]: ERC7579Validator
+		[key: string]: Validator
 	}
 	readonly vendors: {
-		[key: string]: ERC7579Account
+		[key: string]: Vendor
 	}
 	readonly paymaster?: PaymasterSource
 	readonly entryPoint: Contract
