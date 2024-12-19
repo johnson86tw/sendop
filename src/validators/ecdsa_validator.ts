@@ -1,6 +1,6 @@
 import type { EventLog } from '@/utils/ethers'
 import { Contract, getBytes, JsonRpcProvider, type Signer } from '@/utils/ethers'
-import type { Validator } from '../types'
+import type { AccountRequestingValidator } from '../types'
 
 type ConstructorOptions = {
 	address: string
@@ -8,7 +8,7 @@ type ConstructorOptions = {
 	signer: Signer
 }
 
-export class ECDSAValidator implements Validator {
+export class ECDSAValidator implements AccountRequestingValidator {
 	#address: string
 	#client: JsonRpcProvider
 	#signer: Signer
@@ -40,7 +40,7 @@ export class ECDSAValidator implements Validator {
 		return signature
 	}
 
-	async getAccounts(): Promise<string[]> {
+	async requestAccounts(): Promise<string[]> {
 		const events = (await this.#ecdsaValidator.queryFilter(
 			this.#ecdsaValidator.filters.OwnerRegistered(null, await this.#signer.getAddress()),
 		)) as EventLog[]
