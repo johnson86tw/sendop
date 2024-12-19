@@ -1,15 +1,9 @@
 import { hexlify, JsonRpcProvider, randomBytes } from '@/utils/ethers'
 import { Kernel } from './Kernel'
 import { expect, describe, it } from 'vitest'
+import { setup } from 'test/utils/setup'
 
-if (!process.env.PIMLICO_API_KEY || !process.env.sepolia || !process.env.PRIVATE_KEY) {
-	throw new Error('Missing .env')
-}
-
-const PRIVATE_KEY = process.env.PRIVATE_KEY
-const CLIENT_URL = process.env.sepolia
-const PIMLICO_API_KEY = process.env.PIMLICO_API_KEY
-const BUNDLER_URL = `https://api.pimlico.io/v2/11155111/rpc?apikey=${PIMLICO_API_KEY}`
+const { CLIENT_URL } = setup({ chainId: '11155111' })
 
 describe('Kernel', () => {
 	describe('getInitializeData', () => {

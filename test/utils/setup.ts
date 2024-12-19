@@ -23,10 +23,10 @@ const logger = createConsola({
 // await consola.prompt("Deploy to the production?", {
 //   type
 
-export function setup() {
+export function setup(options?: { chainId?: string }) {
 	const { PRIVATE_KEY, ALCHEMY_API_KEY, PIMLICO_API_KEY } = getEnv()
 
-	const chainId = askForChainId()
+	const chainId = options?.chainId || askForChainId()
 
 	const CLIENT_URL = `https://eth-${toNetwork(chainId)}.g.alchemy.com/v2/${ALCHEMY_API_KEY}`
 	const BUNDLER_URL = `https://api.pimlico.io/v2/${chainId}/rpc?apikey=${PIMLICO_API_KEY}`

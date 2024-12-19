@@ -16,7 +16,7 @@
 	},
 	"scripts": {
 		"build": "vite build",
-		"test": "vitest"
+		"test": "vitest --run"
 	},
 	"type": "module",
 	"files": [
@@ -33,6 +33,7 @@
 	},
 	"devDependencies": {
 		"consola": "^3.2.3",
+		"dotenv": "^16.4.7",
 		"vite": "^6.0.3",
 		"vite-plugin-dts": "^4.4.0",
 		"vitest": "^2.1.8"

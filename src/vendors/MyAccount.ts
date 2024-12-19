@@ -10,13 +10,17 @@ import {
 	type BytesLike,
 } from '@/utils/ethers'
 import type { Execution } from '../types'
-import { AccountVendor } from '../types'
+import type { ERC7579Account } from '../types'
 import { abiEncode, padLeft } from '@/utils/ethers'
 
 const MY_ACCOUNT_FACTORY_ADDRESS = '0x7cdf84c1d0915748Df0f1dA6d92701ac6A903E41'
 
-export class MyAccount extends AccountVendor {
+export class MyAccount implements ERC7579Account {
 	static readonly accountId = 'johnson86tw.0.0.1'
+
+	accountId() {
+		return MyAccount.accountId
+	}
 
 	async getNonceKey(validator: string) {
 		return zeroPadValue(validator, 24)

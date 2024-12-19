@@ -1,12 +1,12 @@
 import type { BytesLike } from '@/utils/ethers'
 import { concat, Contract, hexlify, Interface, isAddress, JsonRpcProvider, toBeHex, ZeroAddress } from '@/utils/ethers'
 import type { Execution } from '../types'
-import { AccountVendor } from '../types'
+import type { ERC7579Account } from '../types'
 import { abiEncode, is32BytesHexString, padLeft } from '@/utils/ethers'
 
 const KERNEL_FACTORY_ADDRESS = '0xaac5D4240AF87249B3f71BC8E4A2cae074A3E419'
 
-export class Kernel extends AccountVendor {
+export class Kernel implements ERC7579Account {
 	static readonly accountId = 'kernel.advanced.v0.3.1'
 	static readonly kernelFactoryInterface = new Interface([
 		'function createAccount(bytes calldata data, bytes32 salt) public payable returns (address)',
@@ -16,6 +16,10 @@ export class Kernel extends AccountVendor {
 		'function initialize(bytes21 _rootValidator, address hook, bytes calldata validatorData, bytes calldata hookData, bytes[] calldata initConfig) external',
 		'function execute(bytes32 execMode, bytes calldata executionCalldata)',
 	])
+
+	accountId() {
+		return Kernel.accountId
+	}
 
 	async getNonceKey(validator: string) {
 		return concat(['0x01', validator])

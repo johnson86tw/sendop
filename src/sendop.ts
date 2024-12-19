@@ -1,15 +1,20 @@
 import { getEntryPointContract, JsonRpcProvider, toBeHex } from '@/utils/ethers'
 import { BundlerRpcProvider } from './bundler'
 import { ENTRY_POINT_V07 } from './constant'
-import type { AccountValidator, AccountVendor, Execution, NetworkInfo, PaymasterProvider } from './types'
+import type {
+	ERC7579Validator,
+	ERC7579Account,
+	Execution,
+	NetworkInfo,
+	PaymasterProvider,
+	PaymasterSource,
+} from './types'
 import { getEmptyUserOp, getUserOpHash, packUserOp, type UserOp, type UserOpReceipt } from './utils/aa'
-
-type PaymasterSource = PaymasterProvider | string
 
 export async function sendop(options: {
 	networkInfo: NetworkInfo
-	validator: AccountValidator
-	vendor: AccountVendor
+	validator: ERC7579Validator
+	vendor: ERC7579Account
 	from: string
 	executions: Execution[]
 	paymaster?: PaymasterSource
@@ -55,8 +60,8 @@ async function buildop(
 	chainId: string,
 	client: JsonRpcProvider,
 	bundler: BundlerRpcProvider,
-	validator: AccountValidator,
-	vendor: AccountVendor,
+	validator: ERC7579Validator,
+	vendor: ERC7579Account,
 	from: string,
 	executions: Execution[],
 	paymaster?: PaymasterSource,
@@ -102,8 +107,8 @@ async function buildop(
 
 async function getNonce(
 	client: JsonRpcProvider,
-	vendor: AccountVendor,
-	validator: AccountValidator,
+	vendor: ERC7579Account,
+	validator: ERC7579Validator,
 	from: string,
 ): Promise<string> {
 	const nonceKey = await vendor.getNonceKey(validator.address())

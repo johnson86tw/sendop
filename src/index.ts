@@ -1,5 +1,5 @@
 export * from '@/types'
 export * from '@/utils/aa'
 export * from '@/utils/ethers'
-export * from '@/utils/setup'
 export * from '@/sendop'
+export * from '@/SAProvider'

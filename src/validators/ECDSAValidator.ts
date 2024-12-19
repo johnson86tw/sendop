@@ -1,6 +1,6 @@
 import type { EventLog } from '@/utils/ethers'
 import { Contract, getBytes, JsonRpcProvider, type Signer } from '@/utils/ethers'
-import type { AccountValidator } from '../types'
+import type { ERC7579Validator } from '../types'
 
 type ConstructorOptions = {
 	address: string
@@ -8,7 +8,7 @@ type ConstructorOptions = {
 	signer: Signer
 }
 
-export class ECDSAValidator implements AccountValidator {
+export class ECDSAValidator implements ERC7579Validator {
 	#address: string
 	#client: JsonRpcProvider
 	#signer: Signer
