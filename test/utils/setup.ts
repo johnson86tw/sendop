@@ -1,6 +1,7 @@
 import { createConsola } from 'consola'
+import { toNetwork } from './network'
 
-export const logger = createConsola({
+const logger = createConsola({
 	level: 4,
 })
 
@@ -22,15 +23,6 @@ export const logger = createConsola({
 // await consola.prompt("Deploy to the production?", {
 //   type
 
-export const chainIdToNetwork: Record<string, string> = {
-	'11155111': 'sepolia',
-	'7078815900': 'mekong',
-}
-
-export function toNetwork(chainId: string): string {
-	return chainIdToNetwork[chainId]
-}
-
 export function setup() {
 	const { PRIVATE_KEY, ALCHEMY_API_KEY, PIMLICO_API_KEY } = getEnv()
 
@@ -40,6 +32,7 @@ export function setup() {
 	const BUNDLER_URL = `https://api.pimlico.io/v2/${chainId}/rpc?apikey=${PIMLICO_API_KEY}`
 
 	return {
+		logger,
 		chainId,
 		CLIENT_URL,
 		BUNDLER_URL,

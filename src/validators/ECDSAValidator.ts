@@ -1,5 +1,5 @@
-import type { EventLog } from 'ethers'
-import { Contract, getBytes, JsonRpcProvider, type Signer } from 'ethers'
+import type { EventLog } from '@/utils/ethers'
+import { Contract, getBytes, JsonRpcProvider, type Signer } from '@/utils/ethers'
 import type { AccountValidator } from '../types'
 
 type ConstructorOptions = {

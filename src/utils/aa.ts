@@ -1,8 +1,8 @@
 import { ENTRY_POINT_V07 } from '@/constant'
-import { concat, keccak256, toBeHex, TransactionReceipt, zeroPadValue } from 'ethers'
+import { concat, keccak256, toBeHex, TransactionReceipt, zeroPadValue } from '@/utils/ethers'
 import { abiEncode } from './ethers'
 
-export type PackedUserOperation = {
+export type PackedUserOp = {
 	sender: string
 	nonce: string
 	initCode: string
@@ -14,7 +14,7 @@ export type PackedUserOperation = {
 	signature: string
 }
 
-export type UserOperation = {
+export type UserOp = {
 	sender: string
 	nonce: string
 	factory: string | null
@@ -32,7 +32,7 @@ export type UserOperation = {
 	signature: string
 }
 
-export type Log = {
+export type UserOpLog = {
 	logIndex: string
 	transactionIndex: string
 	transactionHash: string
@@ -43,7 +43,7 @@ export type Log = {
 	topics: string[]
 }
 
-export type UserOperationReceipt = {
+export type UserOpReceipt = {
 	userOpHash: string
 	entryPoint: string
 	sender: string
@@ -52,34 +52,11 @@ export type UserOperationReceipt = {
 	actualGasUsed: string
 	actualGasCost: string
 	success: boolean
-	logs: Log[]
+	logs: UserOpLog[]
 	receipt: TransactionReceipt
 }
 
-// =============================================== Paymaster ===============================================
-
-export interface PaymasterProvider {
-	getPaymasterStubData(params: GetPaymasterStubDataParams): Promise<GetPaymasterStubDataResult>
-}
-
-export type GetPaymasterStubDataParams = [
-	UserOperation, // userOp
-	string, // EntryPoint
-	string, // Chain ID
-	Record<string, any>, // Context
-]
-
-export type GetPaymasterStubDataResult = {
-	sponsor?: { name: string; icon?: string } // Sponsor info
-	paymaster?: string // Paymaster address (entrypoint v0.7)
-	paymasterData?: string // Paymaster data (entrypoint v0.7)
-	paymasterVerificationGasLimit?: string // Paymaster validation gas (entrypoint v0.7)
-	paymasterPostOpGasLimit?: string // Paymaster post-op gas (entrypoint v0.7)
-	paymasterAndData?: string // Paymaster and data (entrypoint v0.6)
-	isFinal?: boolean // Indicates that the caller does not need to call pm_getPaymasterData
-}
-
-export function getEmptyUserOp(): UserOperation {
+export function getEmptyUserOp(): UserOp {
 	return {
 		sender: '',
 		nonce: '0x',
@@ -99,7 +76,7 @@ export function getEmptyUserOp(): UserOperation {
 	}
 }
 
-export function packUserOp(userOp: UserOperation): PackedUserOperation {
+export function packUserOp(userOp: UserOp): PackedUserOp {
 	return {
 		sender: userOp.sender,
 		nonce: userOp.nonce,
@@ -127,7 +104,7 @@ export function packUserOp(userOp: UserOperation): PackedUserOperation {
 	}
 }
 
-export function getUserOpHash(chainId: string, op: PackedUserOperation): string {
+export function getUserOpHash(chainId: string, op: PackedUserOp): string {
 	const hashedInitCode = keccak256(op.initCode)
 	const hashedCallData = keccak256(op.callData)
 	const hashedPaymasterAndData = keccak256(op.paymasterAndData)

@@ -8,7 +8,7 @@ import {
 	toBeHex,
 	zeroPadValue,
 	type BytesLike,
-} from 'ethers'
+} from '@/utils/ethers'
 import type { Execution } from '../types'
 import { AccountVendor } from '../types'
 import { abiEncode, padLeft } from '@/utils/ethers'

@@ -1,4 +1,4 @@
-import { hexlify, JsonRpcProvider, randomBytes } from 'ethers'
+import { hexlify, JsonRpcProvider, randomBytes } from '@/utils/ethers'
 import { Kernel } from './Kernel'
 import { expect, describe, it } from 'vitest'
 

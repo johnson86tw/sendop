@@ -1,5 +1,5 @@
-import type { BytesLike } from 'ethers'
-import { concat, Contract, hexlify, Interface, isAddress, JsonRpcProvider, toBeHex, ZeroAddress } from 'ethers'
+import type { BytesLike } from '@/utils/ethers'
+import { concat, Contract, hexlify, Interface, isAddress, JsonRpcProvider, toBeHex, ZeroAddress } from '@/utils/ethers'
 import type { Execution } from '../types'
 import { AccountVendor } from '../types'
 import { abiEncode, is32BytesHexString, padLeft } from '@/utils/ethers'
