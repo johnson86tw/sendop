@@ -32,8 +32,12 @@
 		}
 	},
 	"devDependencies": {
+		"consola": "^3.2.3",
 		"vite": "^6.0.3",
 		"vite-plugin-dts": "^4.4.0",
 		"vitest": "^2.1.8"
+	},
+	"dependencies": {
+		"ethers": "^6.13.4"
 	}
 }
