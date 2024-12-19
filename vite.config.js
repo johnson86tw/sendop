@@ -6,6 +6,9 @@ import pkg from './package.json'
 const libName = pkg.name
 
 export default defineConfig({
+	resolve: {
+		alias: { '@': path.resolve(__dirname, 'src') },
+	},
 	plugins: [
 		dts({
 			tsconfigPath: './tsconfig.json',

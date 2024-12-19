@@ -26,6 +26,12 @@
 		// add source map to make vscode's "Go to Definition" feature link to the source TypeScript files instead of the generated .d.ts files.
 		"sourceMap": true,
 		"declaration": true,
-		"declarationMap": true
+		"declarationMap": true,
+
+		// resolve @
+		"baseUrl": ".",
+		"paths": {
+			"@/*": ["./src/*"]
+		}
 	}
 }
