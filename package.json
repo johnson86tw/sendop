@@ -1,0 +1,39 @@
+{
+	"name": "sakit",
+	"version": "0.0.1",
+	"description": "",
+	"author": "Johnson Chen <johnson86tw@gmail.com>",
+	"repository": "https://github.com/johnson86tw/sakit",
+	"bugs": "https://github.com/johnson86tw/sakit/issues",
+	"homepage": "https://github.com/johnson86tw/sakit#readme",
+	"license": "",
+	"keywords": [
+		"account abstraction",
+		"ethers"
+	],
+	"engines": {
+		"bun": ">=1.1.0"
+	},
+	"scripts": {
+		"build": "vite build",
+		"test": "vitest"
+	},
+	"type": "module",
+	"files": [
+		"dist"
+	],
+	"main": "./dist/index.umd.cjs",
+	"module": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"import": "./dist/index.js",
+			"require": "./dist/index.umd.cjs"
+		}
+	},
+	"devDependencies": {
+		"vite": "^6.0.3",
+		"vite-plugin-dts": "^4.4.0",
+		"vitest": "^2.1.8"
+	}
+}
