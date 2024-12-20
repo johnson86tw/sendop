@@ -1,5 +1,5 @@
 import { Contract, getAddress, getEntryPointContract, JsonRpcProvider } from '@/utils/ethers'
-import { BundlerRpcProvider } from './bundler'
+import { RpcProvider } from './rpc_provider'
 import type { AccountRequestingValidator, NetworkInfo, PaymasterSource, Validator, Vendor } from './types'
 import { sendop } from './sendop'
 import type { UserOpReceipt } from './utils/aa'
@@ -16,7 +16,7 @@ type ConstructorOptions = {
 export class SAProvider {
 	readonly networkInfo: NetworkInfo
 	readonly client: JsonRpcProvider
-	readonly bundler: BundlerRpcProvider
+	readonly bundler: RpcProvider
 	readonly validator: Validator | AccountRequestingValidator
 	readonly supportedVendors: {
 		[accountId: string]: Vendor
@@ -31,7 +31,7 @@ export class SAProvider {
 	constructor(options: ConstructorOptions) {
 		this.networkInfo = options.networkInfo
 		this.client = new JsonRpcProvider(this.networkInfo.clientUrl)
-		this.bundler = new BundlerRpcProvider(this.networkInfo.bundlerUrl)
+		this.bundler = new RpcProvider(this.networkInfo.bundlerUrl)
 		this.validator = options.validator
 		this.supportedVendors = options.supportedVendors
 		this.paymaster = options.paymaster

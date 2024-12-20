@@ -1,7 +1,16 @@
-import { getEntryPointContract, JsonRpcProvider, toBeHex } from '@/utils/ethers'
-import { BundlerRpcProvider } from './bundler'
+import { getEntryPointContract, JsonRpcProvider, toBeHex, toBigInt } from '@/utils/ethers'
+import { RpcProvider } from './rpc_provider'
 import { ENTRY_POINT_V07 } from './constant'
-import type { Validator, Vendor, Execution, NetworkInfo, PaymasterProvider, PaymasterSource } from './types'
+import type {
+	Validator,
+	Vendor,
+	Execution,
+	NetworkInfo,
+	PaymasterProvider,
+	PaymasterSource,
+	GetPaymasterStubDataResult,
+	GetPaymasterStubDataParams,
+} from './types'
 import { getEmptyUserOp, getUserOpHash, packUserOp, type UserOp, type UserOpReceipt } from './utils/aa'
 
 export async function sendop(options: {
@@ -16,7 +25,7 @@ export async function sendop(options: {
 	const { chainId, clientUrl, bundlerUrl } = networkInfo
 
 	const client = new JsonRpcProvider(clientUrl)
-	const bundler = new BundlerRpcProvider(bundlerUrl)
+	const bundler = new RpcProvider(bundlerUrl)
 
 	const { userOp, userOpHash } = await buildop(
 		chainId,
@@ -52,7 +61,7 @@ export async function sendop(options: {
 async function buildop(
 	chainId: string,
 	client: JsonRpcProvider,
-	bundler: BundlerRpcProvider,
+	bundler: RpcProvider,
 	validator: Validator,
 	vendor: Vendor,
 	from: string,
@@ -68,15 +77,12 @@ async function buildop(
 	userOp.callData = await vendor.getCallData(from, executions)
 	userOp.signature = validator.getDummySignature()
 
-	if (paymaster && typeof paymaster === 'object') {
+	if (paymaster) {
 		const paymasterInfo = await getPaymasterInfo(chainId, userOp, paymaster)
 		userOp.paymaster = paymasterInfo.paymaster
 		userOp.paymasterData = paymasterInfo.paymasterData
 		userOp.paymasterVerificationGasLimit = paymasterInfo.paymasterVerificationGasLimit
 		userOp.paymasterPostOpGasLimit = paymasterInfo.paymasterPostOpGasLimit
-	} else if (paymaster && typeof paymaster === 'string') {
-		// TODO: support paymaster url
-		throw new Error('Paymaster url not supported yet')
 	}
 
 	const gasValues = await getGasValues(bundler, userOp)
@@ -104,29 +110,32 @@ async function getNonce(client: JsonRpcProvider, vendor: Vendor, validator: Vali
 	return toBeHex(nonce)
 }
 
-async function getPaymasterInfo(chainId: string, userOp: UserOp, paymaster: PaymasterProvider) {
-	if (typeof paymaster === 'object') {
-		const paymasterProvider = paymaster as PaymasterProvider
-		const paymasterResult = await paymasterProvider.getPaymasterStubData([
-			userOp,
-			ENTRY_POINT_V07,
-			chainId,
-			{}, // Context
-		])
+async function getPaymasterInfo(chainId: string, userOp: UserOp, paymaster: PaymasterSource) {
+	let res: GetPaymasterStubDataResult = {
+		paymaster: undefined,
+		paymasterData: undefined,
+		paymasterVerificationGasLimit: '0x0',
+		paymasterPostOpGasLimit: '0x0',
+	}
 
-		return {
-			paymaster: paymasterResult.paymaster || null,
-			paymasterData: paymasterResult.paymasterData || null,
-			paymasterVerificationGasLimit: paymasterResult.paymasterVerificationGasLimit || '0x0',
-			paymasterPostOpGasLimit: paymasterResult.paymasterPostOpGasLimit || '0x0',
-		}
-	} else {
-		// TODO: support paymaster url
-		throw new Error('Paymaster not supported', { cause: paymaster })
+	if (typeof paymaster === 'object') {
+		res = await paymaster.getPaymasterStubData([userOp, ENTRY_POINT_V07, chainId, {}])
+	} else if (typeof paymaster === 'string') {
+		res = await new RpcProvider(paymaster).send({
+			method: 'pm_getPaymasterStubData',
+			params: [userOp, ENTRY_POINT_V07, toBeHex(chainId)],
+		})
+	}
+
+	return {
+		paymaster: res.paymaster ?? null,
+		paymasterData: res.paymasterData ?? null,
+		paymasterVerificationGasLimit: res.paymasterVerificationGasLimit ?? '0x0',
+		paymasterPostOpGasLimit: res.paymasterPostOpGasLimit ?? '0x0',
 	}
 }
 
-async function getGasValues(bundler: BundlerRpcProvider, userOp: UserOp) {
+async function getGasValues(bundler: RpcProvider, userOp: UserOp) {
 	const curGasPrice = await bundler.send({ method: 'pimlico_getUserOperationGasPrice' })
 	// Note: user operation max fee per gas must be larger than 0 during gas estimation
 	userOp.maxFeePerGas = curGasPrice.standard.maxFeePerGas

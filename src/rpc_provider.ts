@@ -2,8 +2,7 @@ export type RpcRequestArguments = {
 	readonly method: string
 	readonly params?: readonly unknown[] | object
 }
-
-export class BundlerRpcProvider {
+export class RpcProvider {
 	private url: string
 
 	constructor(url: string) {
