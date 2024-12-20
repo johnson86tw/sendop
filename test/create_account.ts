@@ -1,23 +1,31 @@
 import { sendop } from '@/sendop'
 import { ECDSAValidator } from '@/validators/ecdsa_validator'
-import { MyAccount } from '@/vendors/my_account'
-import { Interface, toNumber, Wallet } from 'ethers'
-import { addresses } from './utils/network'
-import { MyPaymaster } from './utils/myPaymaster'
-import { setup } from './utils/setup'
 import { Kernel } from '@/vendors/kernel'
+import { JsonRpcProvider, Wallet } from 'ethers'
+import { MyPaymaster } from './utils/myPaymaster'
+import { addresses } from './utils/network'
+import { setup } from './utils/setup'
 
-const { logger, chainId, CLIENT_URL, BUNDLER_URL, PRIVATE_KEY } = setup()
+const { logger, chainId, CLIENT_URL, BUNDLER_URL, PRIVATE_KEY, SALT } = setup()
 
 const VALIDATOR_ADDRESS = addresses[chainId].ECDSA_VALIDATOR
-const COUNTER_ADDRESS = addresses[chainId].COUNTER
 const CHARITY_PAYMASTER_ADDRESS = addresses[chainId].CHARITY_PAYMASTER
 
-const FROM = '0x4107926a84ADE895890F90F537Bd04d483BFF27E'
 const vendor = new Kernel()
 
-const num = Math.floor(Math.random() * 10000)
-logger.info(`Setting number to ${num}`)
+const deployedAddress = await vendor.getAddress(
+	new JsonRpcProvider(CLIENT_URL),
+	VALIDATOR_ADDRESS,
+	await new Wallet(PRIVATE_KEY).getAddress(),
+	SALT,
+)
+
+logger.info('Chain ID', chainId)
+logger.info(`Deployed address: ${deployedAddress}`)
+const confirmed = prompt('Confirm? (y/n)')
+if (confirmed !== 'y') {
+	process.exit()
+}
 
 logger.info('Sending op...')
 const op = await sendop({
@@ -32,14 +40,8 @@ const op = await sendop({
 		signer: new Wallet(PRIVATE_KEY),
 	}),
 	vendor,
-	from: FROM,
-	executions: [
-		{
-			to: COUNTER_ADDRESS,
-			data: new Interface(['function setNumber(uint256)']).encodeFunctionData('setNumber', [num]),
-			value: '0x0',
-		},
-	],
+	from: deployedAddress,
+	executions: [],
 	paymaster: new MyPaymaster({
 		chainId,
 		clientUrl: CLIENT_URL,
@@ -49,9 +51,4 @@ const op = await sendop({
 
 logger.info('Waiting for receipt...')
 const receipt = await op.wait()
-logger.info(JSON.stringify(receipt, null, 2))
-
-if (receipt.logs.length > 0) {
-	const log = receipt.logs[receipt.logs.length - 1]
-	logger.info(toNumber(log.data))
-}
+logger.info(receipt)

@@ -21,8 +21,13 @@ export class Kernel implements AccountCreatingVendor {
 		return Kernel.accountId
 	}
 
+	/**
+	 * see kernel "function decodeNonce"
+	 * 1byte mode  | 1byte type | 20bytes identifierWithoutType | 2byte nonceKey | 8byte nonce == 32bytes
+	 */
 	async getNonceKey(validator: string) {
-		return concat(['0x01', validator])
+		// TODO: custom nonce key when constructing kernel
+		return concat(['0x00', '0x00', validator, '0x0000'])
 	}
 
 	async getAddress(provider: JsonRpcProvider, validator: string, owner: string, salt: string): Promise<string> {
@@ -57,7 +62,7 @@ export class Kernel implements AccountCreatingVendor {
 
 	private getInitializeData(validator: string, owner: string) {
 		if (!isAddress(validator) || !isAddress(owner)) {
-			throw new Error('Invalid address')
+			throw new Error('Invalid address', { cause: { validator, owner } })
 		}
 
 		return Kernel.kernelInterface.encodeFunctionData('initialize', [

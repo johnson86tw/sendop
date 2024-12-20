@@ -23,7 +23,7 @@ export class MyAccount implements Vendor {
 	}
 
 	async getNonceKey(validator: string) {
-		return zeroPadValue(validator, 24)
+		return padLeft(validator, 24)
 	}
 
 	async getCallData(from: string, executions: Execution[]) {

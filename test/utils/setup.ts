@@ -23,21 +23,21 @@ const logger = createConsola({
 //   type
 
 export function setup(options?: { chainId?: string }) {
-	const { PRIVATE_KEY, ALCHEMY_API_KEY, PIMLICO_API_KEY } = getEnv()
+	const { PRIVATE_KEY, ALCHEMY_API_KEY, PIMLICO_API_KEY, SALT, CHAIN_ID } = getEnv()
 
-	const chainId = options?.chainId || askForChainId()
+	const chainId = options?.chainId || CHAIN_ID
 
-	const toChainName = (chainId: string): string => {
+	const getClientUrl = (chainId: string) => {
 		if (chainId === '11155111') {
-			return 'sepolia'
+			return `https://eth-sepolia.g.alchemy.com/v2/${ALCHEMY_API_KEY}`
 		} else if (chainId === '7078815900') {
-			return 'mekong'
+			return '`https://eth-${toChainName(chainId)}.g.alchemy.com/v2/${ALCHEMY_API_KEY}`'
 		}
 
 		throw new Error('Invalid chainId')
 	}
 
-	const CLIENT_URL = `https://eth-${toChainName(chainId)}.g.alchemy.com/v2/${ALCHEMY_API_KEY}`
+	const CLIENT_URL = getClientUrl(chainId)
 	const BUNDLER_URL = `https://api.pimlico.io/v2/${chainId}/rpc?apikey=${PIMLICO_API_KEY}`
 
 	return {
@@ -46,6 +46,7 @@ export function setup(options?: { chainId?: string }) {
 		CLIENT_URL,
 		BUNDLER_URL,
 		PRIVATE_KEY,
+		SALT,
 	}
 }
 
@@ -57,11 +58,15 @@ export function getEnv() {
 	const PRIVATE_KEY = process.env.PRIVATE_KEY
 	const ALCHEMY_API_KEY = process.env.ALCHEMY_API_KEY
 	const PIMLICO_API_KEY = process.env.PIMLICO_API_KEY
+	const SALT = process.env.SALT || '0x0000000000000000000000000000000000000000000000000000000000000001'
+	const CHAIN_ID = process.env.CHAIN_ID || '11155111'
 
 	return {
 		PRIVATE_KEY,
 		ALCHEMY_API_KEY,
 		PIMLICO_API_KEY,
+		SALT,
+		CHAIN_ID,
 	}
 }
 

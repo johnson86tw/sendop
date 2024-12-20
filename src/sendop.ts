@@ -1,27 +1,27 @@
-import { getEntryPointContract, JsonRpcProvider, toBeHex, toBigInt } from '@/utils/ethers'
-import { RpcProvider } from './rpc_provider'
+import { getEntryPointContract, JsonRpcProvider, toBeHex } from '@/utils/ethers'
 import { ENTRY_POINT_V07 } from './constant'
+import { RpcProvider } from './rpc_provider'
 import type {
+	AccountCreatingVendor,
+	Execution,
+	GetPaymasterStubDataResult,
+	NetworkInfo,
+	PaymasterSource,
 	Validator,
 	Vendor,
-	Execution,
-	NetworkInfo,
-	PaymasterProvider,
-	PaymasterSource,
-	GetPaymasterStubDataResult,
-	GetPaymasterStubDataParams,
 } from './types'
 import { getEmptyUserOp, getUserOpHash, packUserOp, type UserOp, type UserOpReceipt } from './utils/aa'
 
 export async function sendop(options: {
 	networkInfo: NetworkInfo
 	validator: Validator
-	vendor: Vendor
+	vendor: Vendor | AccountCreatingVendor
 	from: string
 	executions: Execution[]
 	paymaster?: PaymasterSource
+	creationParams?: any[]
 }) {
-	const { networkInfo, validator, vendor, from, executions, paymaster } = options
+	const { networkInfo, validator, vendor, from, executions, paymaster, creationParams } = options
 	const { chainId, clientUrl, bundlerUrl } = networkInfo
 
 	const client = new JsonRpcProvider(clientUrl)
@@ -36,6 +36,7 @@ export async function sendop(options: {
 		from,
 		executions,
 		paymaster,
+		creationParams,
 	)
 
 	await bundler.send({
@@ -63,18 +64,36 @@ async function buildop(
 	client: JsonRpcProvider,
 	bundler: RpcProvider,
 	validator: Validator,
-	vendor: Vendor,
+	vendor: Vendor | AccountCreatingVendor,
 	from: string,
 	executions: Execution[],
 	paymaster?: PaymasterSource,
+	creationParams?: any[],
 ): Promise<{
 	userOp: UserOp
 	userOpHash: string
 }> {
 	const userOp = getEmptyUserOp()
 	userOp.sender = from
+
+	if (creationParams) {
+		if (!('getAddress' in vendor) || !('getInitCode' in vendor)) {
+			throw new Error('Vendor does not support account creation')
+		}
+
+		const address = await vendor.getAddress(client, ...creationParams)
+		if (from !== address) {
+			throw new Error('Sender address mismatch')
+		}
+
+		const initCode = vendor.getInitCode(...creationParams)
+		userOp.factory = initCode.slice(0, 20)
+		userOp.factoryData = initCode.slice(20)
+	} else {
+		userOp.callData = await vendor.getCallData(from, executions)
+	}
+
 	userOp.nonce = await getNonce(client, vendor, validator, from)
-	userOp.callData = await vendor.getCallData(from, executions)
 	userOp.signature = validator.getDummySignature()
 
 	if (paymaster) {
@@ -106,6 +125,7 @@ async function buildop(
 
 async function getNonce(client: JsonRpcProvider, vendor: Vendor, validator: Validator, from: string): Promise<string> {
 	const nonceKey = await vendor.getNonceKey(validator.address())
+	console.log('nonceKey', nonceKey)
 	const nonce: bigint = await getEntryPointContract(client).getNonce(from, nonceKey)
 	return toBeHex(nonce)
 }
