@@ -31,7 +31,7 @@ export function setup(options?: { chainId?: string }) {
 		if (chainId === '11155111') {
 			return `https://eth-sepolia.g.alchemy.com/v2/${ALCHEMY_API_KEY}`
 		} else if (chainId === '7078815900') {
-			return '`https://eth-${toChainName(chainId)}.g.alchemy.com/v2/${ALCHEMY_API_KEY}`'
+			return 'https://rpc.mekong.ethpandaops.io'
 		}
 
 		throw new Error('Invalid chainId')

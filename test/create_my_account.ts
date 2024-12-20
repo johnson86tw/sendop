@@ -16,8 +16,9 @@ const CHARITY_PAYMASTER_ADDRESS = addresses[chainId].CHARITY_PAYMASTER
 
 const vendor = new MyAccount()
 const owner = await new Wallet(PRIVATE_KEY).getAddress()
+const creationParams: [string, string, string] = [SALT, VALIDATOR_ADDRESS, owner]
 
-const deployedAddress = await vendor.getAddress(new JsonRpcProvider(CLIENT_URL), SALT, VALIDATOR_ADDRESS, owner)
+const deployedAddress = await vendor.getAddress(new JsonRpcProvider(CLIENT_URL), ...creationParams)
 
 logger.info('Chain ID', chainId)
 logger.info(`Deployed address: ${deployedAddress}`)
@@ -46,7 +47,7 @@ const op = await sendop({
 		clientUrl: CLIENT_URL,
 		paymasterAddress: CHARITY_PAYMASTER_ADDRESS,
 	}),
-	creationParams: [SALT, VALIDATOR_ADDRESS, owner],
+	creationParams,
 })
 
 logger.info('Waiting for receipt...')

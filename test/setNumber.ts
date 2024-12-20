@@ -8,13 +8,14 @@ import { setup } from './utils/setup'
 import { Kernel } from '@/vendors/kernel'
 
 const { logger, chainId, CLIENT_URL, BUNDLER_URL, PRIVATE_KEY } = setup()
+logger.info(`Chain ID: ${chainId}`)
 
 const VALIDATOR_ADDRESS = addresses[chainId].ECDSA_VALIDATOR
 const COUNTER_ADDRESS = addresses[chainId].COUNTER
 const CHARITY_PAYMASTER_ADDRESS = addresses[chainId].CHARITY_PAYMASTER
 
-const FROM = '0x4107926a84ADE895890F90F537Bd04d483BFF27E'
-const vendor = new Kernel()
+const FROM = '0x182260E0b7fF3B72DeAa6c99f1a50F2380a4Fb00'
+const vendor = new MyAccount()
 
 const num = Math.floor(Math.random() * 10000)
 logger.info(`Setting number to ${num}`)
