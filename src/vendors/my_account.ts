@@ -9,13 +9,11 @@ import {
 	zeroPadValue,
 	type BytesLike,
 } from '@/utils/ethers'
-import type { Execution } from '../types'
-import type { Vendor } from '../types'
+import type { AccountCreatingVendor, Execution } from '../types'
 import { abiEncode, padLeft } from '@/utils/ethers'
+import { MY_ACCOUNT_FACTORY_ADDRESS } from 'test/utils/addresses'
 
-const MY_ACCOUNT_FACTORY_ADDRESS = '0x7cdf84c1d0915748Df0f1dA6d92701ac6A903E41'
-
-export class MyAccount implements Vendor {
+export class MyAccount implements AccountCreatingVendor {
 	static readonly accountId = 'johnson86tw.0.0.1'
 
 	accountId() {
@@ -103,13 +101,13 @@ export class MyAccount implements Vendor {
 		return address
 	}
 
-	getInitCodeData(salt: BytesLike, validator: string, owner: string) {
-		return {
-			factory: MY_ACCOUNT_FACTORY_ADDRESS,
-			factoryData: new Interface([
+	getInitCode(salt: BytesLike, validator: string, owner: string) {
+		return concat([
+			MY_ACCOUNT_FACTORY_ADDRESS,
+			new Interface([
 				'function createAccount(uint256 salt, address validator, bytes calldata data)',
 			]).encodeFunctionData('createAccount', [salt, validator, owner]),
-		}
+		])
 	}
 
 	async getInstallModuleInitData(initData: BytesLike) {

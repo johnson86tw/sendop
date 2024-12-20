@@ -2,7 +2,7 @@ import { sendop } from '@/sendop'
 import { ECDSAValidator } from '@/validators/ecdsa_validator'
 import { MyAccount } from '@/vendors/my_account'
 import { Interface, toNumber, Wallet } from 'ethers'
-import { addresses } from './utils/network'
+import { addresses } from './utils/addresses'
 import { setup } from './utils/setup'
 
 const { logger, chainId, CLIENT_URL, BUNDLER_URL, PRIVATE_KEY } = setup()

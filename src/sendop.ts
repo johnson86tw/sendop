@@ -87,8 +87,10 @@ async function buildop(
 		}
 
 		const initCode = vendor.getInitCode(...creationParams)
-		userOp.factory = initCode.slice(0, 20)
-		userOp.factoryData = initCode.slice(20)
+		// remove 0x prefix in initCode
+		const initCodeWithoutPrefix = initCode.slice(2)
+		userOp.factory = '0x' + initCodeWithoutPrefix.slice(0, 40)
+		userOp.factoryData = '0x' + initCodeWithoutPrefix.slice(40)
 	} else {
 		userOp.callData = await vendor.getCallData(from, executions)
 	}
@@ -125,7 +127,6 @@ async function buildop(
 
 async function getNonce(client: JsonRpcProvider, vendor: Vendor, validator: Validator, from: string): Promise<string> {
 	const nonceKey = await vendor.getNonceKey(validator.address())
-	console.log('nonceKey', nonceKey)
 	const nonce: bigint = await getEntryPointContract(client).getNonce(from, nonceKey)
 	return toBeHex(nonce)
 }

@@ -3,22 +3,21 @@ import { ECDSAValidator } from '@/validators/ecdsa_validator'
 import { Kernel } from '@/vendors/kernel'
 import { JsonRpcProvider, Wallet } from 'ethers'
 import { MyPaymaster } from './utils/myPaymaster'
-import { addresses } from './utils/network'
+import { addresses, MY_ACCOUNT_FACTORY_ADDRESS } from './utils/addresses'
 import { setup } from './utils/setup'
+import { MyAccount } from '@/vendors/my_account'
+
+// 0x182260E0b7fF3B72DeAa6c99f1a50F2380a4Fb00
 
 const { logger, chainId, CLIENT_URL, BUNDLER_URL, PRIVATE_KEY, SALT } = setup()
 
 const VALIDATOR_ADDRESS = addresses[chainId].ECDSA_VALIDATOR
 const CHARITY_PAYMASTER_ADDRESS = addresses[chainId].CHARITY_PAYMASTER
 
-const vendor = new Kernel()
+const vendor = new MyAccount()
+const owner = await new Wallet(PRIVATE_KEY).getAddress()
 
-const deployedAddress = await vendor.getAddress(
-	new JsonRpcProvider(CLIENT_URL),
-	VALIDATOR_ADDRESS,
-	await new Wallet(PRIVATE_KEY).getAddress(),
-	SALT,
-)
+const deployedAddress = await vendor.getAddress(new JsonRpcProvider(CLIENT_URL), SALT, VALIDATOR_ADDRESS, owner)
 
 logger.info('Chain ID', chainId)
 logger.info(`Deployed address: ${deployedAddress}`)
@@ -47,6 +46,7 @@ const op = await sendop({
 		clientUrl: CLIENT_URL,
 		paymasterAddress: CHARITY_PAYMASTER_ADDRESS,
 	}),
+	creationParams: [SALT, VALIDATOR_ADDRESS, owner],
 })
 
 logger.info('Waiting for receipt...')

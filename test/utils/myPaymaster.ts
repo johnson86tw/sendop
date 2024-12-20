@@ -1,5 +1,5 @@
 import { Contract, JsonRpcProvider, toBeHex } from 'ethers'
-import { addresses } from './network'
+import { addresses } from './addresses'
 import type { GetPaymasterStubDataParams, GetPaymasterStubDataResult } from '@/types'
 import { ENTRY_POINT_V07 } from '@/constant'
 
