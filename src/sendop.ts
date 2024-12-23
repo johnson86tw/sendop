@@ -39,6 +39,8 @@ export async function sendop(options: {
 		creationParams,
 	)
 
+	console.log('userOp', userOp)
+
 	await bundler.send({
 		method: 'eth_sendUserOperation',
 		params: [userOp, ENTRY_POINT_V07],
@@ -115,6 +117,27 @@ async function buildop(
 	userOp.paymasterVerificationGasLimit = gasValues.paymasterVerificationGasLimit
 	userOp.paymasterPostOpGasLimit = gasValues.paymasterPostOpGasLimit
 
+	// TODO: pm_getPaymasterStubData isFinal being false should handle this case
+	if (paymaster && typeof paymaster === 'string') {
+		const pmData: {
+			paymaster: string
+			paymasterData: string
+		} = await new RpcProvider(paymaster).send({
+			method: 'pm_getPaymasterData',
+			params: [
+				userOp,
+				ENTRY_POINT_V07,
+				toBeHex(chainId),
+				{
+					sponsorshipPolicyId: 'sp_superb_timeslip',
+				},
+			],
+		})
+		console.log('pmData', pmData)
+		userOp.paymaster = pmData.paymaster
+		userOp.paymasterData = pmData.paymasterData
+	}
+
 	// Sign signature
 	const userOpHash = getUserOpHash(chainId, packUserOp(userOp))
 	userOp.signature = await validator.getSignature(userOpHash)
@@ -144,9 +167,18 @@ async function getPaymasterInfo(chainId: string, userOp: UserOp, paymaster: Paym
 	} else if (typeof paymaster === 'string') {
 		res = await new RpcProvider(paymaster).send({
 			method: 'pm_getPaymasterStubData',
-			params: [userOp, ENTRY_POINT_V07, toBeHex(chainId)],
+			params: [
+				userOp,
+				ENTRY_POINT_V07,
+				toBeHex(chainId),
+				{
+					sponsorshipPolicyId: 'sp_superb_timeslip',
+				},
+			],
 		})
 	}
+
+	console.log('pmStubData', res)
 
 	return {
 		paymaster: res.paymaster ?? null,

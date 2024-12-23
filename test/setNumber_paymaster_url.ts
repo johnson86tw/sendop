@@ -7,9 +7,11 @@ import { setup } from './utils/setup'
 
 const { logger, chainId, CLIENT_URL, BUNDLER_URL, PRIVATE_KEY } = setup()
 
-const MY_ACCOUNT_ADDRESS = addresses[chainId].MY_ACCOUNT
 const VALIDATOR_ADDRESS = addresses[chainId].ECDSA_VALIDATOR
 const COUNTER_ADDRESS = addresses[chainId].COUNTER
+
+const FROM = '0x182260E0b7fF3B72DeAa6c99f1a50F2380a4Fb00'
+const vendor = new MyAccount()
 
 const num = Math.floor(Math.random() * 10000)
 logger.info(`Setting number to ${num}`)
@@ -26,8 +28,8 @@ const op = await sendop({
 		clientUrl: CLIENT_URL,
 		signer: new Wallet(PRIVATE_KEY),
 	}),
-	vendor: new MyAccount(),
-	from: MY_ACCOUNT_ADDRESS,
+	vendor,
+	from: FROM,
 	executions: [
 		{
 			to: COUNTER_ADDRESS,
