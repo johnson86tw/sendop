@@ -1,6 +1,5 @@
 import { ENTRY_POINT_V07 } from '@/constant'
-import { concat, keccak256, toBeHex, TransactionReceipt, zeroPadValue } from '@/utils/ethers'
-import { abiEncode } from './ethers'
+import { concat, keccak256, toBeHex, TransactionReceipt, zeroPadValue, abiEncode } from '@/utils/ethers'
 
 export type PackedUserOp = {
 	sender: string
