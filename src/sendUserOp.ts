@@ -1,41 +1,57 @@
-import { getEntryPointContract, JsonRpcProvider, toBeHex } from '@/utils/ethers'
-import { ENTRY_POINT_V07 } from './constant'
-import { RpcProvider } from './rpc_provider'
-import type {
-	AccountCreatingVendor,
-	Execution,
-	GetPaymasterStubDataResult,
-	PaymasterSource,
-	Validator,
-	Vendor,
-} from './types'
-import { getEmptyUserOp, getUserOpHash, packUserOp, type UserOp, type UserOpReceipt } from './utils/aa'
+import type { ParamType } from 'ethers'
+import { AbiCoder, concat, keccak256, toBeHex, TransactionReceipt, zeroPadValue } from 'ethers'
 
-export interface ExecutionBuilder {
-	getNonceKey(...args: any[]): Promise<string> | string
-	getCallData(...args: any[]): Promise<string> | string
-	getDummySignature(...args: any[]): Promise<string> | string
-	getSignature(userOpHash: string): Promise<string> | string
-	getInitCode?(...args: any[]): Promise<string> | string
+export const ENTRY_POINT_V07 = '0x0000000071727De22E5E9d8BAf0edAc6f37da032'
+
+export type Execution = {
+	to: string
+	data: string
+	value: string
 }
 
-export type PaymasterInfo = {
-	paymaster: string
-	paymasterVerificationGasLimit: string
-	paymasterPostOpGasLimit: string
-	paymasterData: string
+export interface ExecutionBuilder {
+	getInitCode?(): Promise<string> | string
+	getNonce(): Promise<string> | string
+	getCallData(executions: Execution[]): Promise<string> | string
+	getDummySignature(): Promise<string> | string
+	getSignature(userOpHash: string): Promise<string> | string
+}
+
+export type GetPaymasterStubDataResult = {
+	sponsor?: { name: string; icon?: string } // Sponsor info
+	paymaster?: string // Paymaster address (entrypoint v0.7)
+	paymasterData?: string // Paymaster data (entrypoint v0.7)
+	paymasterVerificationGasLimit?: string // Paymaster validation gas (entrypoint v0.7)
+	paymasterPostOpGasLimit?: string // Paymaster post-op gas (entrypoint v0.7)
+	paymasterAndData?: string // Paymaster and data (entrypoint v0.6)
+	isFinal?: boolean // Indicates that the caller does not need to call pm_getPaymasterData
+}
+
+export type GetPaymasterDataResult = {
+	paymaster?: string // Paymaster address (entrypoint v0.7)
+	paymasterData?: string // Paymaster data (entrypoint v0.7)
+	paymasterAndData?: string // Paymaster and data (entrypoint v0.6)
 }
 
 export interface PaymasterBuilder {
-	getPaymasterInfo(...args: any[]): Promise<PaymasterInfo> | PaymasterInfo
+	getPaymasterStubData(): Promise<GetPaymasterStubDataResult> | GetPaymasterStubDataResult
+	getPaymasterData(): Promise<GetPaymasterDataResult> | GetPaymasterDataResult
 }
 
 export interface Client {
 	chainId: string
-	estimateUserOpGas(userOp: UserOp): Promise<string>
-	sendUserOp(userOp: UserOp): Promise<string>
-	sendUserOps(userOps: UserOp[]): Promise<string[]> // TODO: 這個功能的必要性？
-	getUserOpReceipt(hash: string): Promise<UserOpReceipt>
+	getGasPrice(): Promise<bigint>
+	estimateUserOperationGas(userOp: UserOp): Promise<{
+		maxFeePerGas: string
+		maxPriorityFeePerGas: string
+		preVerificationGas: string
+		verificationGasLimit: string
+		callGasLimit: string
+		paymasterVerificationGasLimit: string
+		paymasterPostOpGasLimit: string
+	}>
+	sendUserOperation(userOp: UserOp): Promise<string>
+	getUserOperationReceipt(hash: string): Promise<UserOpReceipt>
 }
 
 export async function sendUserOp(options: {
@@ -46,27 +62,65 @@ export async function sendUserOp(options: {
 	pmBuilder?: PaymasterBuilder
 }) {
 	const { client, from, executions, execBuilder, pmBuilder } = options
-	const userOp = getEmptyUserOp()
 
 	// build userOp
+	const userOp = getEmptyUserOp()
+	userOp.sender = from
+
+	if (execBuilder.getInitCode) {
+		const initCode = await execBuilder.getInitCode()
+		const initCodeWithoutPrefix = initCode.slice(2) // remove 0x prefix
+		userOp.factory = '0x' + initCodeWithoutPrefix.slice(0, 40)
+		userOp.factoryData = '0x' + initCodeWithoutPrefix.slice(40)
+	}
+
+	userOp.nonce = await execBuilder.getNonce()
+	userOp.callData = await execBuilder.getCallData(executions)
+	userOp.signature = await execBuilder.getDummySignature()
 
 	// if pm, get pmStubData
+	let isFinal = false
+	if (pmBuilder) {
+		const pmStubData = await pmBuilder.getPaymasterStubData()
+		userOp.paymaster = pmStubData.paymaster ?? null
+		userOp.paymasterData = pmStubData.paymasterData ?? null
+		userOp.paymasterVerificationGasLimit = pmStubData.paymasterVerificationGasLimit ?? '0x0'
+		userOp.paymasterPostOpGasLimit = pmStubData.paymasterPostOpGasLimit ?? '0x0'
+		isFinal = pmStubData.isFinal ?? false
+	}
 
 	// esitmate userOp
+	// Note: user operation max fee per gas must be larger than 0 during gas estimation
+	userOp.maxFeePerGas = (await client.getGasPrice()).toString(16)
+	const estimateGas = await client.estimateUserOperationGas(userOp)
+	userOp.maxFeePerGas = estimateGas.maxFeePerGas
+	userOp.maxPriorityFeePerGas = estimateGas.maxPriorityFeePerGas
+	userOp.preVerificationGas = estimateGas.preVerificationGas
+	userOp.verificationGasLimit = estimateGas.verificationGasLimit
+	userOp.callGasLimit = estimateGas.callGasLimit
+	userOp.paymasterVerificationGasLimit = estimateGas.paymasterVerificationGasLimit
+	userOp.paymasterPostOpGasLimit = estimateGas.paymasterPostOpGasLimit
 
 	// if pm && !isFinal, get pmData
+	if (pmBuilder && !isFinal) {
+		const pmData = await pmBuilder.getPaymasterData()
+		userOp.paymaster = pmData.paymaster ?? null
+		userOp.paymasterData = pmData.paymasterData ?? null
+	}
 
 	// sign userOp
+	const userOpHash = getUserOpHash(client.chainId, packUserOp(userOp))
+	userOp.signature = await execBuilder.getSignature(userOpHash)
 
 	// send userOp
-	await client.sendUserOp(userOp)
+	await client.sendUserOperation(userOp)
 
 	return {
 		hash: userOpHash,
 		async wait() {
 			let result: UserOpReceipt | null = null
 			while (result === null) {
-				result = await client.getUserOpReceipt(userOpHash)
+				result = await client.getUserOperationReceipt(userOpHash)
 				if (result === null) {
 					await new Promise(resolve => setTimeout(resolve, 1000))
 				}
@@ -76,149 +130,137 @@ export async function sendUserOp(options: {
 	}
 }
 
-async function buildop(
-	chainId: string,
-	client: JsonRpcProvider,
-	bundler: RpcProvider,
-	validator: Validator,
-	vendor: Vendor | AccountCreatingVendor,
-	from: string,
-	executions: Execution[],
-	paymaster?: PaymasterSource,
-	creationParams?: any[],
-): Promise<{
-	userOp: UserOp
+export type PackedUserOp = {
+	sender: string
+	nonce: string
+	initCode: string
+	callData: string
+	accountGasLimits: string
+	preVerificationGas: string
+	gasFees: string
+	paymasterAndData: string
+	signature: string
+}
+
+export type UserOp = {
+	sender: string
+	nonce: string
+	factory: string | null
+	factoryData: string
+	callData: string
+	callGasLimit: string
+	verificationGasLimit: string
+	preVerificationGas: string
+	maxFeePerGas: string
+	maxPriorityFeePerGas: string
+	paymaster: string | null
+	paymasterVerificationGasLimit: string
+	paymasterPostOpGasLimit: string
+	paymasterData: string | null
+	signature: string
+}
+
+export type UserOpLog = {
+	logIndex: string
+	transactionIndex: string
+	transactionHash: string
+	blockHash: string
+	blockNumber: string
+	address: string
+	data: string
+	topics: string[]
+}
+
+export type UserOpReceipt = {
 	userOpHash: string
-}> {
-	const userOp = getEmptyUserOp()
-	userOp.sender = from
+	entryPoint: string
+	sender: string
+	nonce: string
+	paymaster: string
+	actualGasUsed: string
+	actualGasCost: string
+	success: boolean
+	logs: UserOpLog[]
+	receipt: TransactionReceipt
+}
 
-	if (creationParams) {
-		if (!('getAddress' in vendor) || !('getInitCode' in vendor)) {
-			throw new Error('Vendor does not support account creation')
-		}
-
-		const address = await vendor.getAddress(client, ...creationParams)
-		if (from !== address) {
-			throw new Error('Sender address mismatch')
-		}
-
-		const initCode = vendor.getInitCode(...creationParams)
-		// remove 0x prefix in initCode
-		const initCodeWithoutPrefix = initCode.slice(2)
-		userOp.factory = '0x' + initCodeWithoutPrefix.slice(0, 40)
-		userOp.factoryData = '0x' + initCodeWithoutPrefix.slice(40)
-	} else {
-		userOp.callData = await vendor.getCallData(from, executions)
-	}
-
-	userOp.nonce = await getNonce(client, vendor, validator, from)
-	userOp.signature = validator.getDummySignature()
-
-	if (paymaster) {
-		const paymasterInfo = await getPaymasterInfo(chainId, userOp, paymaster)
-		userOp.paymaster = paymasterInfo.paymaster
-		userOp.paymasterData = paymasterInfo.paymasterData
-		userOp.paymasterVerificationGasLimit = paymasterInfo.paymasterVerificationGasLimit
-		userOp.paymasterPostOpGasLimit = paymasterInfo.paymasterPostOpGasLimit
-	}
-
-	const gasValues = await getGasValues(bundler, userOp)
-	userOp.maxFeePerGas = gasValues.maxFeePerGas
-	userOp.maxPriorityFeePerGas = gasValues.maxPriorityFeePerGas
-	userOp.preVerificationGas = gasValues.preVerificationGas
-	userOp.verificationGasLimit = gasValues.verificationGasLimit
-	userOp.callGasLimit = gasValues.callGasLimit
-	userOp.paymasterVerificationGasLimit = gasValues.paymasterVerificationGasLimit
-	userOp.paymasterPostOpGasLimit = gasValues.paymasterPostOpGasLimit
-
-	// TODO: pm_getPaymasterStubData isFinal being false should handle this case
-	if (paymaster && typeof paymaster === 'string') {
-		const pmData: {
-			paymaster: string
-			paymasterData: string
-		} = await new RpcProvider(paymaster).send({
-			method: 'pm_getPaymasterData',
-			params: [
-				userOp,
-				ENTRY_POINT_V07,
-				toBeHex(chainId),
-				{
-					sponsorshipPolicyId: 'sp_superb_timeslip',
-				},
-			],
-		})
-		console.log('pmData', pmData)
-		userOp.paymaster = pmData.paymaster
-		userOp.paymasterData = pmData.paymasterData
-	}
-
-	// Sign signature
-	const userOpHash = getUserOpHash(chainId, packUserOp(userOp))
-	userOp.signature = await validator.getSignature(userOpHash)
-
+export function getEmptyUserOp(): UserOp {
 	return {
-		userOp,
-		userOpHash,
-	}
-}
-
-async function getNonce(client: JsonRpcProvider, vendor: Vendor, validator: Validator, from: string): Promise<string> {
-	const nonceKey = await vendor.getNonceKey(validator.address())
-	const nonce: bigint = await getEntryPointContract(client).getNonce(from, nonceKey)
-	return toBeHex(nonce)
-}
-
-async function getPaymasterInfo(chainId: string, userOp: UserOp, paymaster: PaymasterSource) {
-	let res: GetPaymasterStubDataResult = {
-		paymaster: undefined,
-		paymasterData: undefined,
+		sender: '',
+		nonce: '0x',
+		factory: null,
+		factoryData: '0x',
+		callData: '0x',
+		callGasLimit: '0x0',
+		verificationGasLimit: '0x0',
+		preVerificationGas: '0x0',
+		maxFeePerGas: '0x0',
+		maxPriorityFeePerGas: '0x0',
+		paymaster: null,
 		paymasterVerificationGasLimit: '0x0',
 		paymasterPostOpGasLimit: '0x0',
-	}
-
-	if (typeof paymaster === 'object') {
-		res = await paymaster.getPaymasterStubData([userOp, ENTRY_POINT_V07, chainId, {}])
-	} else if (typeof paymaster === 'string') {
-		res = await new RpcProvider(paymaster).send({
-			method: 'pm_getPaymasterStubData',
-			params: [
-				userOp,
-				ENTRY_POINT_V07,
-				toBeHex(chainId),
-				{
-					sponsorshipPolicyId: 'sp_superb_timeslip',
-				},
-			],
-		})
-	}
-
-	console.log('pmStubData', res)
-
-	return {
-		paymaster: res.paymaster ?? null,
-		paymasterData: res.paymasterData ?? null,
-		paymasterVerificationGasLimit: res.paymasterVerificationGasLimit ?? '0x0',
-		paymasterPostOpGasLimit: res.paymasterPostOpGasLimit ?? '0x0',
+		paymasterData: null,
+		signature: '0x',
 	}
 }
 
-async function getGasValues(bundler: RpcProvider, userOp: UserOp) {
-	const curGasPrice = await bundler.send({ method: 'pimlico_getUserOperationGasPrice' })
-	// Note: user operation max fee per gas must be larger than 0 during gas estimation
-	userOp.maxFeePerGas = curGasPrice.standard.maxFeePerGas
-	const estimateGas = await bundler.send({
-		method: 'eth_estimateUserOperationGas',
-		params: [userOp, ENTRY_POINT_V07],
-	})
-
+export function packUserOp(userOp: UserOp): PackedUserOp {
 	return {
-		maxFeePerGas: userOp.maxFeePerGas,
-		maxPriorityFeePerGas: curGasPrice.standard.maxPriorityFeePerGas,
-		preVerificationGas: estimateGas.preVerificationGas,
-		verificationGasLimit: estimateGas.verificationGasLimit,
-		callGasLimit: estimateGas.callGasLimit,
-		paymasterVerificationGasLimit: estimateGas.paymasterVerificationGasLimit,
-		paymasterPostOpGasLimit: estimateGas.paymasterPostOpGasLimit,
+		sender: userOp.sender,
+		nonce: userOp.nonce,
+		initCode: userOp.factory && userOp.factoryData ? concat([userOp.factory, userOp.factoryData]) : '0x',
+		callData: userOp.callData,
+		accountGasLimits: concat([
+			zeroPadValue(toBeHex(userOp.verificationGasLimit), 16),
+			zeroPadValue(toBeHex(userOp.callGasLimit), 16),
+		]),
+		preVerificationGas: zeroPadValue(toBeHex(userOp.preVerificationGas), 32),
+		gasFees: concat([
+			zeroPadValue(toBeHex(userOp.maxPriorityFeePerGas), 16),
+			zeroPadValue(toBeHex(userOp.maxFeePerGas), 16),
+		]),
+		paymasterAndData:
+			userOp.paymaster && userOp.paymasterData
+				? concat([
+						userOp.paymaster,
+						zeroPadValue(toBeHex(userOp.paymasterVerificationGasLimit), 16),
+						zeroPadValue(toBeHex(userOp.paymasterPostOpGasLimit), 16),
+						userOp.paymasterData,
+				  ])
+				: '0x',
+		signature: userOp.signature,
 	}
+}
+
+export function getUserOpHash(chainId: string, op: PackedUserOp): string {
+	const hashedInitCode = keccak256(op.initCode)
+	const hashedCallData = keccak256(op.callData)
+	const hashedPaymasterAndData = keccak256(op.paymasterAndData)
+	const encoded = abiEncode(
+		['bytes32', 'address', 'uint256'],
+		[
+			keccak256(
+				abiEncode(
+					['address', 'uint256', 'bytes32', 'bytes32', 'bytes32', 'uint256', 'bytes32', 'bytes32'],
+					[
+						op.sender,
+						op.nonce,
+						hashedInitCode,
+						hashedCallData,
+						op.accountGasLimits,
+						op.preVerificationGas,
+						op.gasFees,
+						hashedPaymasterAndData,
+					],
+				),
+			),
+			ENTRY_POINT_V07,
+			BigInt(chainId),
+		],
+	)
+	return keccak256(encoded)
+}
+
+export function abiEncode(types: ReadonlyArray<string | ParamType>, values: ReadonlyArray<any>): string {
+	return new AbiCoder().encode(types, values)
 }
