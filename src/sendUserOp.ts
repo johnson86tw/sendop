@@ -10,7 +10,7 @@ export type Execution = {
 }
 
 export interface ExecutionBuilder {
-	getInitCode?(): Promise<string> | string
+	getInitCode?(): Promise<string | null> | string | null
 	getNonce(): Promise<string> | string
 	getCallData(executions: Execution[]): Promise<string> | string
 	getDummySignature(): Promise<string> | string
@@ -34,14 +34,13 @@ export type GetPaymasterDataResult = {
 }
 
 export interface PaymasterBuilder {
-	getPaymasterStubData(): Promise<GetPaymasterStubDataResult> | GetPaymasterStubDataResult
-	getPaymasterData(): Promise<GetPaymasterDataResult> | GetPaymasterDataResult
+	getPaymasterStubData(userOp: UserOp): Promise<GetPaymasterStubDataResult> | GetPaymasterStubDataResult
+	getPaymasterData?(userOp: UserOp): Promise<GetPaymasterDataResult> | GetPaymasterDataResult
 }
 
 export interface Client {
 	chainId: string
-	getGasPrice(): Promise<bigint>
-	estimateUserOperationGas(userOp: UserOp): Promise<{
+	getGasValues(userOp: UserOp): Promise<{
 		maxFeePerGas: string
 		maxPriorityFeePerGas: string
 		preVerificationGas: string
@@ -69,9 +68,11 @@ export async function sendUserOp(options: {
 
 	if (execBuilder.getInitCode) {
 		const initCode = await execBuilder.getInitCode()
-		const initCodeWithoutPrefix = initCode.slice(2) // remove 0x prefix
-		userOp.factory = '0x' + initCodeWithoutPrefix.slice(0, 40)
-		userOp.factoryData = '0x' + initCodeWithoutPrefix.slice(40)
+		if (initCode) {
+			const initCodeWithoutPrefix = initCode.slice(2) // remove 0x prefix
+			userOp.factory = '0x' + initCodeWithoutPrefix.slice(0, 40)
+			userOp.factoryData = '0x' + initCodeWithoutPrefix.slice(40)
+		}
 	}
 
 	userOp.nonce = await execBuilder.getNonce()
@@ -81,9 +82,9 @@ export async function sendUserOp(options: {
 	// if pm, get pmStubData
 	let isFinal = false
 	if (pmBuilder) {
-		const pmStubData = await pmBuilder.getPaymasterStubData()
+		const pmStubData = await pmBuilder.getPaymasterStubData(userOp)
 		userOp.paymaster = pmStubData.paymaster ?? null
-		userOp.paymasterData = pmStubData.paymasterData ?? null
+		userOp.paymasterData = pmStubData.paymasterData ?? '0x'
 		userOp.paymasterVerificationGasLimit = pmStubData.paymasterVerificationGasLimit ?? '0x0'
 		userOp.paymasterPostOpGasLimit = pmStubData.paymasterPostOpGasLimit ?? '0x0'
 		isFinal = pmStubData.isFinal ?? false
@@ -91,21 +92,21 @@ export async function sendUserOp(options: {
 
 	// esitmate userOp
 	// Note: user operation max fee per gas must be larger than 0 during gas estimation
-	userOp.maxFeePerGas = (await client.getGasPrice()).toString(16)
-	const estimateGas = await client.estimateUserOperationGas(userOp)
-	userOp.maxFeePerGas = estimateGas.maxFeePerGas
-	userOp.maxPriorityFeePerGas = estimateGas.maxPriorityFeePerGas
-	userOp.preVerificationGas = estimateGas.preVerificationGas
-	userOp.verificationGasLimit = estimateGas.verificationGasLimit
-	userOp.callGasLimit = estimateGas.callGasLimit
-	userOp.paymasterVerificationGasLimit = estimateGas.paymasterVerificationGasLimit
-	userOp.paymasterPostOpGasLimit = estimateGas.paymasterPostOpGasLimit
+
+	const gasValues = await client.getGasValues(userOp)
+	userOp.maxFeePerGas = gasValues.maxFeePerGas
+	userOp.maxPriorityFeePerGas = gasValues.maxPriorityFeePerGas
+	userOp.preVerificationGas = gasValues.preVerificationGas
+	userOp.verificationGasLimit = gasValues.verificationGasLimit
+	userOp.callGasLimit = gasValues.callGasLimit
+	userOp.paymasterVerificationGasLimit = gasValues.paymasterVerificationGasLimit
+	userOp.paymasterPostOpGasLimit = gasValues.paymasterPostOpGasLimit
 
 	// if pm && !isFinal, get pmData
-	if (pmBuilder && !isFinal) {
-		const pmData = await pmBuilder.getPaymasterData()
+	if (pmBuilder && pmBuilder.getPaymasterData && !isFinal) {
+		const pmData = await pmBuilder.getPaymasterData(userOp)
 		userOp.paymaster = pmData.paymaster ?? null
-		userOp.paymasterData = pmData.paymasterData ?? null
+		userOp.paymasterData = pmData.paymasterData ?? '0x'
 	}
 
 	// sign userOp
@@ -146,18 +147,18 @@ export type UserOp = {
 	sender: string
 	nonce: string
 	factory: string | null
-	factoryData: string
+	factoryData: string | '0x'
 	callData: string
-	callGasLimit: string
-	verificationGasLimit: string
-	preVerificationGas: string
-	maxFeePerGas: string
-	maxPriorityFeePerGas: string
+	callGasLimit: string | '0x0'
+	verificationGasLimit: string | '0x0'
+	preVerificationGas: string | '0x0'
+	maxFeePerGas: string | '0x0'
+	maxPriorityFeePerGas: string | '0x0'
 	paymaster: string | null
-	paymasterVerificationGasLimit: string
-	paymasterPostOpGasLimit: string
-	paymasterData: string | null
-	signature: string
+	paymasterVerificationGasLimit: string | '0x0'
+	paymasterPostOpGasLimit: string | '0x0'
+	paymasterData: string | '0x'
+	signature: string | '0x'
 }
 
 export type UserOpLog = {
@@ -199,7 +200,7 @@ export function getEmptyUserOp(): UserOp {
 		paymaster: null,
 		paymasterVerificationGasLimit: '0x0',
 		paymasterPostOpGasLimit: '0x0',
-		paymasterData: null,
+		paymasterData: '0x',
 		signature: '0x',
 	}
 }
