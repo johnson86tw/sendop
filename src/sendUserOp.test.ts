@@ -4,26 +4,22 @@ import { MyPaymaster } from 'test/utils/myPaymaster'
 import { setup } from 'test/utils/setup'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { RpcProvider } from './rpc_provider'
-import type { Client, ExecutionBuilder, PaymasterBuilder, UserOp, UserOpReceipt } from './sendUserOp'
+import type { Bundler, ExecutionBuilder, PaymasterBuilder, UserOp, UserOpReceipt } from './sendUserOp'
 import { ENTRY_POINT_V07, sendUserOp } from './sendUserOp'
 import type { Execution, Validator, Vendor } from './types'
 import { getEntryPointContract } from './utils/ethers'
 import { ECDSAValidator } from './validators/ecdsa_validator'
 import { MyAccount } from './vendors/my_account'
 
-class MyClient implements Client {
+class PimlicoBundler implements Bundler {
 	chainId: string
-	ethClientUrl: string
-	bundlerUrl: string
-	ethClient: JsonRpcProvider
+	url: string
 	bundler: RpcProvider
 
-	constructor(chainId: string, ethClientUrl: string, bundlerUrl: string) {
+	constructor(chainId: string, url: string) {
 		this.chainId = chainId
-		this.ethClientUrl = ethClientUrl
-		this.bundlerUrl = bundlerUrl
-		this.ethClient = new JsonRpcProvider(ethClientUrl)
-		this.bundler = new RpcProvider(bundlerUrl)
+		this.url = url
+		this.bundler = new RpcProvider(url)
 	}
 
 	async getGasValues(userOp: UserOp) {
@@ -129,12 +125,12 @@ describe('sendUserOp', () => {
 	it('should set number', async () => {
 		const FROM = '0x182260E0b7fF3B72DeAa6c99f1a50F2380a4Fb00'
 		logger.info(`FROM: ${FROM}`)
-		const client = new MyClient(chainId, CLIENT_URL, BUNDLER_URL)
+		const bundler = new PimlicoBundler(chainId, BUNDLER_URL)
 
 		const number = Math.floor(Math.random() * 10000)
 
 		const op = await sendUserOp({
-			client,
+			bundler,
 			from: FROM,
 			executions: [
 				{
@@ -144,18 +140,18 @@ describe('sendUserOp', () => {
 				},
 			],
 			execBuilder: new ExecBuilder({
-				client: client.ethClient,
+				client: new JsonRpcProvider(CLIENT_URL),
 				vendor: new MyAccount(),
 				validator: new ECDSAValidator({
 					address: ECDSA_VALIDATOR,
-					clientUrl: client.ethClientUrl,
+					clientUrl: CLIENT_URL,
 					signer,
 				}),
 				from: FROM,
 			}),
 			pmBuilder: new PmBuilder({
 				chainId,
-				clientUrl: client.ethClientUrl,
+				clientUrl: CLIENT_URL,
 				paymasterAddress: CHARITY_PAYMASTER,
 			}),
 		})

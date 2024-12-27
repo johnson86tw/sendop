@@ -38,7 +38,7 @@ export interface PaymasterBuilder {
 	getPaymasterData?(userOp: UserOp): Promise<GetPaymasterDataResult> | GetPaymasterDataResult
 }
 
-export interface Client {
+export interface Bundler {
 	chainId: string
 	getGasValues(userOp: UserOp): Promise<{
 		maxFeePerGas: string
@@ -54,13 +54,13 @@ export interface Client {
 }
 
 export async function sendUserOp(options: {
-	client: Client
+	bundler: Bundler
 	from: string
 	executions: Execution[]
 	execBuilder: ExecutionBuilder
 	pmBuilder?: PaymasterBuilder
 }) {
-	const { client, from, executions, execBuilder, pmBuilder } = options
+	const { bundler, from, executions, execBuilder, pmBuilder } = options
 
 	// build userOp
 	const userOp = getEmptyUserOp()
@@ -93,7 +93,7 @@ export async function sendUserOp(options: {
 	// esitmate userOp
 	// Note: user operation max fee per gas must be larger than 0 during gas estimation
 
-	const gasValues = await client.getGasValues(userOp)
+	const gasValues = await bundler.getGasValues(userOp)
 	userOp.maxFeePerGas = gasValues.maxFeePerGas
 	userOp.maxPriorityFeePerGas = gasValues.maxPriorityFeePerGas
 	userOp.preVerificationGas = gasValues.preVerificationGas
@@ -110,18 +110,18 @@ export async function sendUserOp(options: {
 	}
 
 	// sign userOp
-	const userOpHash = getUserOpHash(client.chainId, packUserOp(userOp))
+	const userOpHash = getUserOpHash(bundler.chainId, packUserOp(userOp))
 	userOp.signature = await execBuilder.getSignature(userOpHash)
 
 	// send userOp
-	await client.sendUserOperation(userOp)
+	await bundler.sendUserOperation(userOp)
 
 	return {
 		hash: userOpHash,
 		async wait() {
 			let result: UserOpReceipt | null = null
 			while (result === null) {
-				result = await client.getUserOperationReceipt(userOpHash)
+				result = await bundler.getUserOperationReceipt(userOpHash)
 				if (result === null) {
 					await new Promise(resolve => setTimeout(resolve, 1000))
 				}
