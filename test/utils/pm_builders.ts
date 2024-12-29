@@ -1,46 +1,9 @@
-import type { Execution, ExecutionBuilder, PaymasterBuilder, UserOp, GetPaymasterStubDataResult } from '@/core'
-import type { Validator, Vendor } from '@/types'
+import type { GetPaymasterDataResult, GetPaymasterStubDataResult, PaymasterBuilder, UserOp } from '@/core'
+import { ENTRY_POINT_V07, RpcProvider } from '@/index'
 import { Contract, JsonRpcProvider, toBeHex } from 'ethers'
-import { getEntryPointContract } from '@/utils/ethers'
 import { CHARITY_PAYMASTER } from './addresses'
 
 const CHARITY_PAYMASTER_ADDRESS = CHARITY_PAYMASTER
-
-export class ExecBuilder implements ExecutionBuilder {
-	#client: JsonRpcProvider
-	#vendor: Vendor
-	#validator: Validator
-	#from: string
-
-	constructor(options: { client: JsonRpcProvider; vendor: Vendor; validator: Validator; from: string }) {
-		this.#client = options.client
-		this.#vendor = options.vendor
-		this.#validator = options.validator
-		this.#from = options.from
-	}
-
-	async getInitCode() {
-		return null
-	}
-
-	async getNonce() {
-		const nonceKey = await this.#vendor.getNonceKey(this.#validator.address())
-		const nonce: bigint = await getEntryPointContract(this.#client).getNonce(this.#from, nonceKey)
-		return toBeHex(nonce)
-	}
-
-	async getCallData(executions: Execution[]) {
-		return await this.#vendor.getCallData(this.#from, executions)
-	}
-
-	async getDummySignature() {
-		return this.#validator.getDummySignature()
-	}
-
-	async getSignature(userOpHash: string) {
-		return await this.#validator.getSignature(userOpHash)
-	}
-}
 
 export class MyPaymaster implements PaymasterBuilder {
 	chainId: string
@@ -91,5 +54,43 @@ export class MyPaymaster implements PaymasterBuilder {
 			paymasterPostOpGasLimit: toBeHex(999_999n),
 			isFinal: true,
 		}
+	}
+}
+
+export class PimlicoPaymaster implements PaymasterBuilder {
+	chainId: string
+	paymaster: RpcProvider
+
+	constructor(options: { chainId: string; url: string }) {
+		this.chainId = options.chainId
+		this.paymaster = new RpcProvider(options.url)
+	}
+
+	async getPaymasterStubData(userOp: UserOp): Promise<GetPaymasterStubDataResult> {
+		return this.paymaster.send({
+			method: 'pm_getPaymasterStubData',
+			params: [
+				userOp,
+				ENTRY_POINT_V07,
+				toBeHex(this.chainId),
+				{
+					sponsorshipPolicyId: 'sp_superb_timeslip',
+				},
+			],
+		})
+	}
+
+	async getPaymasterData(userOp: UserOp): Promise<GetPaymasterDataResult> {
+		return this.paymaster.send({
+			method: 'pm_getPaymasterData',
+			params: [
+				userOp,
+				ENTRY_POINT_V07,
+				toBeHex(this.chainId),
+				{
+					sponsorshipPolicyId: 'sp_superb_timeslip',
+				},
+			],
+		})
 	}
 }

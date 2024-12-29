@@ -2,11 +2,13 @@ import { sendop } from '@/core'
 import { ECDSAValidator } from '@/validators/ecdsa_validator'
 import { MyAccount } from '@/vendors/my_account'
 import { Interface, JsonRpcProvider, toNumber, Wallet } from 'ethers'
-import { CHARITY_PAYMASTER, COUNTER, ECDSA_VALIDATOR } from './utils/addresses'
-import { ExecBuilder } from './utils/exec_builders'
+import { COUNTER, ECDSA_VALIDATOR } from './utils/addresses'
 import { PimlicoBundler } from './utils/bundler'
-import { MyPaymaster } from './utils/pm_builders'
+import { ExecBuilder } from './utils/exec_builders'
+import { PimlicoPaymaster } from './utils/pm_builders'
 import { setup } from './utils/setup'
+
+// only works for sepolia
 
 const { logger, chainId, CLIENT_URL, BUNDLER_URL, PRIVATE_KEY } = setup()
 logger.info(`Chain ID: ${chainId}`)
@@ -37,10 +39,9 @@ const op = await sendop({
 		}),
 		from: FROM,
 	}),
-	pmBuilder: new MyPaymaster({
+	pmBuilder: new PimlicoPaymaster({
 		chainId,
-		clientUrl: CLIENT_URL,
-		paymasterAddress: CHARITY_PAYMASTER,
+		url: BUNDLER_URL,
 	}),
 })
 

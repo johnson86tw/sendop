@@ -1,6 +1,6 @@
 import type { Bundler, UserOp, UserOpReceipt } from '@/core'
 import { ENTRY_POINT_V07 } from '@/core'
-import { RpcProvider } from '@/rpc_provider'
+import { RpcProvider } from '@/utils/rpc_provider'
 
 export class PimlicoBundler implements Bundler {
 	chainId: string

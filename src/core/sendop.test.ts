@@ -1,52 +1,13 @@
-import { type Execution } from '@/core'
-import { Interface, JsonRpcProvider, toBeHex, toNumber, Wallet } from 'ethers'
+import { Interface, JsonRpcProvider, toNumber, Wallet } from 'ethers'
 import { CHARITY_PAYMASTER, COUNTER, ECDSA_VALIDATOR } from 'test/utils/addresses'
-import { MyPaymaster } from 'test/utils/builders'
 import { PimlicoBundler } from 'test/utils/bundler'
+import { ExecBuilder } from 'test/utils/exec_builders'
+import { MyPaymaster } from 'test/utils/pm_builders'
 import { setup } from 'test/utils/setup'
 import { beforeAll, describe, expect, it } from 'vitest'
-import type { Validator, Vendor } from '../types'
-import { getEntryPointContract } from '../utils/ethers'
 import { ECDSAValidator } from '../validators/ecdsa_validator'
 import { MyAccount } from '../vendors/my_account'
-import type { ExecutionBuilder } from './sendop'
 import { sendop } from './sendop'
-
-class ExecBuilder implements ExecutionBuilder {
-	#client: JsonRpcProvider
-	#vendor: Vendor
-	#validator: Validator
-	#from: string
-
-	constructor(options: { client: JsonRpcProvider; vendor: Vendor; validator: Validator; from: string }) {
-		this.#client = options.client
-		this.#vendor = options.vendor
-		this.#validator = options.validator
-		this.#from = options.from
-	}
-
-	async getInitCode() {
-		return null
-	}
-
-	async getNonce() {
-		const nonceKey = await this.#vendor.getNonceKey(this.#validator.address())
-		const nonce: bigint = await getEntryPointContract(this.#client).getNonce(this.#from, nonceKey)
-		return toBeHex(nonce)
-	}
-
-	async getCallData(executions: Execution[]) {
-		return await this.#vendor.getCallData(this.#from, executions)
-	}
-
-	async getDummySignature() {
-		return this.#validator.getDummySignature()
-	}
-
-	async getSignature(userOpHash: string) {
-		return await this.#validator.getSignature(userOpHash)
-	}
-}
 
 const { logger, chainId, CLIENT_URL, BUNDLER_URL, PRIVATE_KEY } = setup()
 logger.info(`Chain ID: ${chainId}`)
