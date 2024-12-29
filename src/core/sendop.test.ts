@@ -3,13 +3,14 @@ import { CHARITY_PAYMASTER, COUNTER, ECDSA_VALIDATOR } from 'test/utils/addresse
 import { MyPaymaster } from 'test/utils/myPaymaster'
 import { setup } from 'test/utils/setup'
 import { beforeAll, describe, expect, it } from 'vitest'
-import { RpcProvider } from './rpc_provider'
-import type { Bundler, ExecutionBuilder, PaymasterBuilder, UserOp, UserOpReceipt } from './sendUserOp'
-import { ENTRY_POINT_V07, sendUserOp } from './sendUserOp'
-import type { Execution, Validator, Vendor } from './types'
-import { getEntryPointContract } from './utils/ethers'
-import { ECDSAValidator } from './validators/ecdsa_validator'
-import { MyAccount } from './vendors/my_account'
+import { RpcProvider } from '../rpc_provider'
+import type { Execution, Validator, Vendor } from '../types'
+import { getEntryPointContract } from '../utils/ethers'
+import { ECDSAValidator } from '../validators/ecdsa_validator'
+import { MyAccount } from '../vendors/my_account'
+import type { Bundler, ExecutionBuilder, PaymasterBuilder } from './sendop'
+import { ENTRY_POINT_V07, sendUserOp } from './sendop'
+import type { UserOp, UserOpReceipt } from './types'
 
 class PimlicoBundler implements Bundler {
 	chainId: string
@@ -114,7 +115,7 @@ class PmBuilder implements PaymasterBuilder {
 const { logger, chainId, CLIENT_URL, BUNDLER_URL, PRIVATE_KEY } = setup()
 logger.info(`Chain ID: ${chainId}`)
 
-describe('sendUserOp', () => {
+describe('sendop', () => {
 	let signer: Wallet
 
 	beforeAll(() => {

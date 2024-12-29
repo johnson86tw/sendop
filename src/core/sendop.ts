@@ -1,7 +1,23 @@
 import type { ParamType } from 'ethers'
-import { AbiCoder, concat, keccak256, toBeHex, TransactionReceipt, zeroPadValue } from 'ethers'
+import { AbiCoder, concat, keccak256, toBeHex, zeroPadValue } from 'ethers'
+import type { PackedUserOp, UserOp, UserOpReceipt } from './types'
 
 export const ENTRY_POINT_V07 = '0x0000000071727De22E5E9d8BAf0edAc6f37da032'
+
+export interface Bundler {
+	chainId: string
+	getGasValues(userOp: UserOp): Promise<{
+		maxFeePerGas: string
+		maxPriorityFeePerGas: string
+		preVerificationGas: string
+		verificationGasLimit: string
+		callGasLimit: string
+		paymasterVerificationGasLimit: string
+		paymasterPostOpGasLimit: string
+	}>
+	sendUserOperation(userOp: UserOp): Promise<string>
+	getUserOperationReceipt(hash: string): Promise<UserOpReceipt>
+}
 
 export type Execution = {
 	to: string
@@ -15,6 +31,14 @@ export interface ExecutionBuilder {
 	getCallData(executions: Execution[]): Promise<string> | string
 	getDummySignature(): Promise<string> | string
 	getSignature(userOpHash: string): Promise<string> | string
+}
+
+/**
+ * refer to ERC-7677
+ */
+export interface PaymasterBuilder {
+	getPaymasterStubData(userOp: UserOp): Promise<GetPaymasterStubDataResult> | GetPaymasterStubDataResult
+	getPaymasterData?(userOp: UserOp): Promise<GetPaymasterDataResult> | GetPaymasterDataResult
 }
 
 export type GetPaymasterStubDataResult = {
@@ -31,26 +55,6 @@ export type GetPaymasterDataResult = {
 	paymaster?: string // Paymaster address (entrypoint v0.7)
 	paymasterData?: string // Paymaster data (entrypoint v0.7)
 	paymasterAndData?: string // Paymaster and data (entrypoint v0.6)
-}
-
-export interface PaymasterBuilder {
-	getPaymasterStubData(userOp: UserOp): Promise<GetPaymasterStubDataResult> | GetPaymasterStubDataResult
-	getPaymasterData?(userOp: UserOp): Promise<GetPaymasterDataResult> | GetPaymasterDataResult
-}
-
-export interface Bundler {
-	chainId: string
-	getGasValues(userOp: UserOp): Promise<{
-		maxFeePerGas: string
-		maxPriorityFeePerGas: string
-		preVerificationGas: string
-		verificationGasLimit: string
-		callGasLimit: string
-		paymasterVerificationGasLimit: string
-		paymasterPostOpGasLimit: string
-	}>
-	sendUserOperation(userOp: UserOp): Promise<string>
-	getUserOperationReceipt(hash: string): Promise<UserOpReceipt>
 }
 
 export async function sendUserOp(options: {
@@ -129,60 +133,6 @@ export async function sendUserOp(options: {
 			return result
 		},
 	}
-}
-
-export type PackedUserOp = {
-	sender: string
-	nonce: string
-	initCode: string
-	callData: string
-	accountGasLimits: string
-	preVerificationGas: string
-	gasFees: string
-	paymasterAndData: string
-	signature: string
-}
-
-export type UserOp = {
-	sender: string
-	nonce: string
-	factory: string | null
-	factoryData: string | '0x'
-	callData: string
-	callGasLimit: string | '0x0'
-	verificationGasLimit: string | '0x0'
-	preVerificationGas: string | '0x0'
-	maxFeePerGas: string | '0x0'
-	maxPriorityFeePerGas: string | '0x0'
-	paymaster: string | null
-	paymasterVerificationGasLimit: string | '0x0'
-	paymasterPostOpGasLimit: string | '0x0'
-	paymasterData: string | '0x'
-	signature: string | '0x'
-}
-
-export type UserOpLog = {
-	logIndex: string
-	transactionIndex: string
-	transactionHash: string
-	blockHash: string
-	blockNumber: string
-	address: string
-	data: string
-	topics: string[]
-}
-
-export type UserOpReceipt = {
-	userOpHash: string
-	entryPoint: string
-	sender: string
-	nonce: string
-	paymaster: string
-	actualGasUsed: string
-	actualGasCost: string
-	success: boolean
-	logs: UserOpLog[]
-	receipt: TransactionReceipt
 }
 
 export function getEmptyUserOp(): UserOp {
