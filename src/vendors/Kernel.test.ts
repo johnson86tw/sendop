@@ -60,12 +60,17 @@ describe('Kernel', () => {
 
 	describe('getAddress', () => {
 		it('should not return zero address', async () => {
-			const kernel = new Kernel()
 			const validatorAddress = '0xd577C0746c19DeB788c0D698EcAf66721DC2F7A4'
 			const owner = '0xd78B5013757Ea4A7841811eF770711e6248dC282'
 			const salt = hexlify(randomBytes(32))
 
-			const address = await kernel.getAddress(new JsonRpcProvider(CLIENT_URL), validatorAddress, owner, salt)
+			const kernel = new Kernel(CLIENT_URL, {
+				salt,
+				validatorAddress,
+				owner,
+			})
+
+			const address = await kernel.getAddress()
 			expect(address).not.toBe('0x0000000000000000000000000000000000000000')
 		})
 	})
