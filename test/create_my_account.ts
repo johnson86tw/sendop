@@ -36,6 +36,7 @@ const op = await sendop({
 			signer: new Wallet(PRIVATE_KEY),
 		}),
 		from: FROM,
+		isCreation: true,
 	}),
 	pmBuilder: new MyPaymaster({
 		chainId,

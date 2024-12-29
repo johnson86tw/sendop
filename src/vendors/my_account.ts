@@ -14,18 +14,23 @@ import {
 import { MY_ACCOUNT_FACTORY_ADDRESS } from 'test/utils/addresses'
 import type { AccountCreatingVendor } from '../types'
 
-type CreationOptions = {
-	salt: BytesLike
-	validatorAddress: string
-	owner: string
-}
-
 export class MyAccount implements AccountCreatingVendor {
 	static readonly accountId = 'johnson86tw.0.0.1'
 	#client?: JsonRpcProvider
-	#creationOptions?: CreationOptions
+	#creationOptions?: {
+		salt: BytesLike
+		validatorAddress: string
+		owner: string
+	}
 
-	constructor(clientUrl?: string, creationOptions?: CreationOptions) {
+	constructor(
+		clientUrl?: string,
+		creationOptions?: {
+			salt: BytesLike
+			validatorAddress: string
+			owner: string
+		},
+	) {
 		if (clientUrl) {
 			this.#client = new JsonRpcProvider(clientUrl)
 		}

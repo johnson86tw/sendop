@@ -17,6 +17,29 @@ export class Kernel implements AccountCreatingVendor {
 		'function execute(bytes32 execMode, bytes calldata executionCalldata)',
 	])
 
+	#client?: JsonRpcProvider
+	#creationOptions?: {
+		salt: string
+		validatorAddress: string
+		owner: string
+	}
+
+	constructor(
+		clientUrl?: string,
+		creationOptions?: {
+			salt: string
+			validatorAddress: string
+			owner: string
+		},
+	) {
+		if (clientUrl) {
+			this.#client = new JsonRpcProvider(clientUrl)
+		}
+		if (creationOptions) {
+			this.#creationOptions = creationOptions
+		}
+	}
+
 	accountId() {
 		return Kernel.accountId
 	}
@@ -30,13 +53,26 @@ export class Kernel implements AccountCreatingVendor {
 		return concat(['0x00', '0x00', validator, '0x0000'])
 	}
 
-	async getAddress(provider: JsonRpcProvider, validator: string, owner: string, salt: string): Promise<string> {
+	async getAddress(): Promise<string> {
+		if (!this.#client) {
+			throw new Error('Client is not set')
+		}
+
+		if (!this.#creationOptions) {
+			throw new Error('Creation options are not set')
+		}
+
+		const { salt, validatorAddress, owner } = this.#creationOptions
+
 		if (!is32BytesHexString(salt)) {
 			throw new Error('Salt should be 32 bytes')
 		}
 
-		const kernelFactory = new Contract(KERNEL_FACTORY_ADDRESS, Kernel.kernelFactoryInterface, provider)
-		const address = await kernelFactory['getAddress(bytes,bytes32)'](this.getInitializeData(validator, owner), salt)
+		const kernelFactory = new Contract(KERNEL_FACTORY_ADDRESS, Kernel.kernelFactoryInterface, this.#client)
+		const address = await kernelFactory['getAddress(bytes,bytes32)'](
+			this.getInitializeData(validatorAddress, owner),
+			salt,
+		)
 
 		if (!isAddress(address)) {
 			throw new Error('Failed to get new address')
@@ -45,8 +81,14 @@ export class Kernel implements AccountCreatingVendor {
 		return address
 	}
 
-	getInitCode(validator: string, owner: string, salt: string) {
-		return concat([KERNEL_FACTORY_ADDRESS, this.getCreateAccountData(validator, owner, salt)])
+	getInitCode() {
+		if (!this.#creationOptions) {
+			throw new Error('Creation options are not set')
+		}
+
+		const { validatorAddress, owner, salt } = this.#creationOptions
+
+		return concat([KERNEL_FACTORY_ADDRESS, this.getCreateAccountData(validatorAddress, owner, salt)])
 	}
 
 	private getCreateAccountData(validator: string, owner: string, salt: string) {

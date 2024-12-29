@@ -1,20 +1,18 @@
 import { sendop } from '@/core'
 import { ECDSAValidator } from '@/validators/ecdsa_validator'
-import { Kernel } from '@/vendors/kernel'
-import { JsonRpcProvider, Wallet } from 'ethers'
-import { CHARITY_PAYMASTER, ECDSA_VALIDATOR } from './utils/addresses'
-import { PimlicoBundler } from './utils/bundler'
-import { ExecBuilder } from './utils/exec_builders'
-import { MyPaymaster } from './utils/pm_builders'
-import { setup } from './utils/setup'
-
-// 0x71d59e7f1fc4A6574A9C91264614bFd9F9e9B4A9
+import { hexlify, JsonRpcProvider, randomBytes, Wallet } from 'ethers'
+import { CHARITY_PAYMASTER, ECDSA_VALIDATOR, ExecBuilder, MyPaymaster, PimlicoBundler, setup } from './utils'
+import { Kernel } from '@/index'
 
 const { logger, chainId, CLIENT_URL, BUNDLER_URL, PRIVATE_KEY, SALT } = setup()
 
-const creationParams: [string, string, string] = [ECDSA_VALIDATOR, await new Wallet(PRIVATE_KEY).getAddress(), SALT]
-
-const deployedAddress = await new Kernel().getAddress(new JsonRpcProvider(CLIENT_URL), ...creationParams)
+const creationOptions = {
+	salt: hexlify(randomBytes(32)),
+	validatorAddress: ECDSA_VALIDATOR,
+	owner: await new Wallet(PRIVATE_KEY).getAddress(),
+}
+const vendor = new Kernel(CLIENT_URL, creationOptions)
+const deployedAddress = await vendor.getAddress()
 const FROM = deployedAddress
 
 logger.info('Chain ID', chainId)
@@ -31,13 +29,14 @@ const op = await sendop({
 	executions: [],
 	execBuilder: new ExecBuilder({
 		client: new JsonRpcProvider(CLIENT_URL),
-		vendor: new Kernel(),
+		vendor,
 		validator: new ECDSAValidator({
 			address: ECDSA_VALIDATOR,
 			clientUrl: CLIENT_URL,
 			signer: new Wallet(PRIVATE_KEY),
 		}),
 		from: FROM,
+		isCreation: true,
 	}),
 	pmBuilder: new MyPaymaster({
 		chainId,

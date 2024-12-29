@@ -8,16 +8,24 @@ export class ExecBuilder implements ExecutionBuilder {
 	#vendor: Vendor | AccountCreatingVendor
 	#validator: Validator
 	#from: string
+	#isCreation: boolean
 
-	constructor(options: { client: JsonRpcProvider; vendor: Vendor; validator: Validator; from: string }) {
+	constructor(options: {
+		client: JsonRpcProvider
+		vendor: Vendor
+		validator: Validator
+		from: string
+		isCreation?: boolean
+	}) {
 		this.#client = options.client
 		this.#vendor = options.vendor
 		this.#validator = options.validator
 		this.#from = options.from
+		this.#isCreation = options.isCreation ?? false
 	}
 
 	async getInitCode() {
-		if ('getInitCode' in this.#vendor) {
+		if (this.#isCreation && 'getInitCode' in this.#vendor) {
 			return this.#vendor.getInitCode()
 		}
 		return null
