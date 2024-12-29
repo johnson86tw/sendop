@@ -1,11 +1,29 @@
-import { hexlify, JsonRpcProvider, randomBytes } from 'ethers'
+import { hexlify, randomBytes } from 'ethers'
 import { setup } from 'test/utils/setup'
-import { describe, expect, it } from 'vitest'
+import { beforeAll, describe, expect, it } from 'vitest'
 import { Kernel } from './kernel'
+import { CHARITY_PAYMASTER } from 'test/utils/addresses'
+import { ECDSAValidator } from '@/validators/ecdsa_validator'
+import { ECDSA_VALIDATOR } from 'test/utils/addresses'
+import { JsonRpcProvider, Wallet } from 'ethers'
+import { sendop } from '..'
+import { PimlicoBundler } from 'test/utils/bundler'
+import { ExecBuilder } from 'test/utils/exec_builders'
+import { MyPaymaster } from 'test/utils/pm_builders'
 
-const { CLIENT_URL } = setup({ chainId: '11155111' })
-
+const { logger, chainId, CLIENT_URL, BUNDLER_URL, PRIVATE_KEY } = setup({
+	chainId: '11155111',
+})
 describe('Kernel', () => {
+	let signer: Wallet
+	let client: JsonRpcProvider
+
+	beforeAll(() => {
+		signer = new Wallet(PRIVATE_KEY)
+		client = new JsonRpcProvider(CLIENT_URL)
+		logger.info(`Signer: ${signer.address}`)
+	})
+
 	describe('private getInitializeData', () => {
 		it('should return correct initialization data', async () => {
 			const kernel = new Kernel()
@@ -73,5 +91,43 @@ describe('Kernel', () => {
 			const address = await kernel.getAddress()
 			expect(address).not.toBe('0x0000000000000000000000000000000000000000')
 		})
+	})
+
+	describe('deploy', () => {
+		it('should deploy Kernel', async () => {
+			const creationOptions = {
+				salt: hexlify(randomBytes(32)),
+				validatorAddress: ECDSA_VALIDATOR,
+				owner: signer.address,
+			}
+			const vendor = new Kernel(CLIENT_URL, creationOptions)
+			const deployedAddress = await vendor.getAddress()
+			const FROM = deployedAddress
+
+			const op = await sendop({
+				bundler: new PimlicoBundler(chainId, BUNDLER_URL),
+				from: FROM,
+				executions: [],
+				execBuilder: new ExecBuilder({
+					client: new JsonRpcProvider(CLIENT_URL),
+					vendor,
+					validator: new ECDSAValidator({
+						address: ECDSA_VALIDATOR,
+						clientUrl: CLIENT_URL,
+						signer: new Wallet(PRIVATE_KEY),
+					}),
+					from: FROM,
+					isCreation: true,
+				}),
+				pmBuilder: new MyPaymaster({
+					chainId,
+					clientUrl: CLIENT_URL,
+					paymasterAddress: CHARITY_PAYMASTER,
+				}),
+			})
+			await op.wait()
+			const code = await client.getCode(deployedAddress)
+			expect(code).not.toBe('0x')
+		}, 100_000)
 	})
 })
