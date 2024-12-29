@@ -18,18 +18,18 @@ export interface Bundler {
 	getUserOperationReceipt(hash: string): Promise<UserOpReceipt>
 }
 
-export type Execution = {
-	to: string
-	data: string
-	value: string
-}
-
 export interface ExecutionBuilder {
-	getInitCode?(): Promise<string | null> | string | null
+	getInitCode?(): Promise<string> | string
 	getNonce(): Promise<string> | string
 	getCallData(executions: Execution[]): Promise<string> | string
 	getDummySignature(): Promise<string> | string
 	getSignature(userOpHash: string): Promise<string> | string
+}
+
+export type Execution = {
+	to: string
+	data: string
+	value: string
 }
 
 /**
@@ -46,14 +46,12 @@ export type GetPaymasterStubDataResult = {
 	paymasterData?: string // Paymaster data (entrypoint v0.7)
 	paymasterVerificationGasLimit?: string // Paymaster validation gas (entrypoint v0.7)
 	paymasterPostOpGasLimit?: string // Paymaster post-op gas (entrypoint v0.7)
-	paymasterAndData?: string // Paymaster and data (entrypoint v0.6)
 	isFinal?: boolean // Indicates that the caller does not need to call pm_getPaymasterData
 }
 
 export type GetPaymasterDataResult = {
 	paymaster?: string // Paymaster address (entrypoint v0.7)
 	paymasterData?: string // Paymaster data (entrypoint v0.7)
-	paymasterAndData?: string // Paymaster and data (entrypoint v0.6)
 }
 
 export async function sendop(options: {
@@ -71,7 +69,7 @@ export async function sendop(options: {
 
 	if (execBuilder.getInitCode) {
 		const initCode = await execBuilder.getInitCode()
-		if (initCode) {
+		if (initCode && initCode !== '0x') {
 			const initCodeWithoutPrefix = initCode.slice(2) // remove 0x prefix
 			userOp.factory = '0x' + initCodeWithoutPrefix.slice(0, 40)
 			userOp.factoryData = '0x' + initCodeWithoutPrefix.slice(40)
@@ -113,7 +111,7 @@ export async function sendop(options: {
 	}
 
 	// sign userOp
-	const userOpHash = getUserOpHash(bundler.chainId, packUserOp(userOp))
+	const userOpHash = getUserOpHash(packUserOp(userOp), ENTRY_POINT_V07, bundler.chainId)
 	userOp.signature = await execBuilder.getSignature(userOpHash)
 
 	// send userOp
@@ -182,7 +180,7 @@ export function packUserOp(userOp: UserOp): PackedUserOp {
 	}
 }
 
-export function getUserOpHash(chainId: string, op: PackedUserOp): string {
+export function getUserOpHash(op: PackedUserOp, entryPointAddress: string, chainId: string): string {
 	const hashedInitCode = keccak256(op.initCode)
 	const hashedCallData = keccak256(op.callData)
 	const hashedPaymasterAndData = keccak256(op.paymasterAndData)
@@ -205,7 +203,7 @@ export function getUserOpHash(chainId: string, op: PackedUserOp): string {
 					],
 				),
 			),
-			ENTRY_POINT_V07,
+			entryPointAddress,
 			BigInt(chainId),
 		],
 	)

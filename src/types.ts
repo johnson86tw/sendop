@@ -1,24 +1,25 @@
-import type { JsonRpcProvider } from 'ethers'
 import type { Execution } from '@/core'
 
 export interface Vendor {
-	accountId(): string
-	getNonceKey(validator: string): Promise<string>
-	getCallData(from: string, executions: Execution[]): Promise<string>
+	getNonceKey(validator: string): Promise<string> | string
+	getCallData(from: string, executions: Execution[]): Promise<string> | string
+}
 
-	getInstallModuleInitData?(...args: any[]): Promise<string>
-	getUninstallModuleDeInitData?(...args: any[]): Promise<string>
+export interface ERC7579Vendor extends Vendor {
+	accountId(): Promise<string> | string
+	getInstallModuleInitData?(): Promise<string> | string
+	getUninstallModuleDeInitData?(): Promise<string> | string
 }
 
 export interface AccountCreatingVendor extends Vendor {
-	getAddress(provider: JsonRpcProvider, ...args: any[]): Promise<string>
-	getInitCode(...args: any[]): string
+	getAddress(): Promise<string> | string
+	getInitCode(): Promise<string> | string
 }
 
 export interface Validator {
-	address(): string
-	getDummySignature(): string
-	getSignature(userOpHash: string): Promise<string>
+	address(): Promise<string> | string
+	getDummySignature(): Promise<string> | string
+	getSignature(userOpHash: string): Promise<string> | string
 }
 
 export interface AccountRequestingValidator extends Validator {

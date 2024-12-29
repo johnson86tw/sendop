@@ -1,18 +1,18 @@
 import type { Execution, ExecutionBuilder } from '@/core'
-import type { AccountCreatingVendor, Validator, Vendor } from '@/types'
+import type { AccountCreatingVendor, ERC7579Vendor, Validator, Vendor } from '@/types'
 import { getEntryPointContract } from '@/utils/ethers'
 import { JsonRpcProvider, toBeHex } from 'ethers'
 
 export class ExecBuilder implements ExecutionBuilder {
 	#client: JsonRpcProvider
-	#vendor: Vendor | AccountCreatingVendor
+	#vendor: Vendor | ERC7579Vendor | AccountCreatingVendor
 	#validator: Validator
 	#from: string
 	#isCreation: boolean
 
 	constructor(options: {
 		client: JsonRpcProvider
-		vendor: Vendor
+		vendor: Vendor | ERC7579Vendor | AccountCreatingVendor
 		validator: Validator
 		from: string
 		isCreation?: boolean
@@ -26,13 +26,13 @@ export class ExecBuilder implements ExecutionBuilder {
 
 	async getInitCode() {
 		if (this.#isCreation && 'getInitCode' in this.#vendor) {
-			return this.#vendor.getInitCode()
+			return await this.#vendor.getInitCode()
 		}
-		return null
+		return '0x'
 	}
 
 	async getNonce() {
-		const nonceKey = await this.#vendor.getNonceKey(this.#validator.address())
+		const nonceKey = await this.#vendor.getNonceKey(await this.#validator.address())
 		const nonce: bigint = await getEntryPointContract(this.#client).getNonce(this.#from, nonceKey)
 		return toBeHex(nonce)
 	}
@@ -42,7 +42,7 @@ export class ExecBuilder implements ExecutionBuilder {
 	}
 
 	async getDummySignature() {
-		return this.#validator.getDummySignature()
+		return await this.#validator.getDummySignature()
 	}
 
 	async getSignature(userOpHash: string) {
