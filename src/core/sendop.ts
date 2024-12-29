@@ -1,4 +1,3 @@
-import type { ParamType } from 'ethers'
 import { AbiCoder, concat, keccak256, toBeHex, zeroPadValue } from 'ethers'
 import type { PackedUserOp, UserOp, UserOpReceipt } from './types'
 
@@ -187,11 +186,12 @@ export function getUserOpHash(chainId: string, op: PackedUserOp): string {
 	const hashedInitCode = keccak256(op.initCode)
 	const hashedCallData = keccak256(op.callData)
 	const hashedPaymasterAndData = keccak256(op.paymasterAndData)
-	const encoded = abiEncode(
+	const abiCoder = new AbiCoder()
+	const encoded = abiCoder.encode(
 		['bytes32', 'address', 'uint256'],
 		[
 			keccak256(
-				abiEncode(
+				abiCoder.encode(
 					['address', 'uint256', 'bytes32', 'bytes32', 'bytes32', 'uint256', 'bytes32', 'bytes32'],
 					[
 						op.sender,
@@ -210,8 +210,4 @@ export function getUserOpHash(chainId: string, op: PackedUserOp): string {
 		],
 	)
 	return keccak256(encoded)
-}
-
-export function abiEncode(types: ReadonlyArray<string | ParamType>, values: ReadonlyArray<any>): string {
-	return new AbiCoder().encode(types, values)
 }

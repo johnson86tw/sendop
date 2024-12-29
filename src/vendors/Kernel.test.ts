@@ -1,7 +1,7 @@
-import { hexlify, JsonRpcProvider, randomBytes } from '@/utils/ethers'
-import { Kernel } from './kernel'
-import { expect, describe, it } from 'vitest'
+import { hexlify, JsonRpcProvider, randomBytes } from 'ethers'
 import { setup } from 'test/utils/setup'
+import { describe, expect, it } from 'vitest'
+import { Kernel } from './kernel'
 
 const { CLIENT_URL } = setup({ chainId: '11155111' })
 

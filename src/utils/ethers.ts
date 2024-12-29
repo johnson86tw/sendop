@@ -1,6 +1,6 @@
-import { ENTRY_POINT_V07 } from '@/constant'
-import type { ContractRunner } from 'ethers'
-import { Contract, Interface, zeroPadBytes, zeroPadValue } from 'ethers'
+import { ENTRY_POINT_V07 } from '@/core'
+import type { ContractRunner, ParamType } from 'ethers'
+import { AbiCoder, Contract, Interface, zeroPadBytes, zeroPadValue } from 'ethers'
 
 export const ERC7579Interface = new Interface([
 	'function installModule(uint256 moduleType, address module, bytes calldata initData)',
@@ -48,4 +48,8 @@ export function padRight(data: string, length: number = 32) {
 		data = data.slice(0, 2) + '0' + data.slice(2)
 	}
 	return zeroPadBytes(data, length)
+}
+
+export function abiEncode(types: ReadonlyArray<string | ParamType>, values: ReadonlyArray<any>): string {
+	return new AbiCoder().encode(types, values)
 }

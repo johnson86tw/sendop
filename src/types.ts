@@ -1,11 +1,5 @@
-import type { Execution } from '@/core'
 import type { JsonRpcProvider } from 'ethers'
-
-export type NetworkInfo = {
-	chainId: string
-	clientUrl: string
-	bundlerUrl: string
-}
+import type { Execution } from '@/core'
 
 export interface Vendor {
 	accountId(): string
