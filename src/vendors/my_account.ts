@@ -14,8 +14,25 @@ import {
 import { MY_ACCOUNT_FACTORY_ADDRESS } from 'test/utils/addresses'
 import type { AccountCreatingVendor } from '../types'
 
+type CreationOptions = {
+	salt: BytesLike
+	validatorAddress: string
+	owner: string
+}
+
 export class MyAccount implements AccountCreatingVendor {
 	static readonly accountId = 'johnson86tw.0.0.1'
+	#client?: JsonRpcProvider
+	#creationOptions?: CreationOptions
+
+	constructor(clientUrl?: string, creationOptions?: CreationOptions) {
+		if (clientUrl) {
+			this.#client = new JsonRpcProvider(clientUrl)
+		}
+		if (creationOptions) {
+			this.#creationOptions = creationOptions
+		}
+	}
 
 	accountId() {
 		return MyAccount.accountId
@@ -25,7 +42,49 @@ export class MyAccount implements AccountCreatingVendor {
 		return padLeft(validator, 24)
 	}
 
+	async getAddress(): Promise<string> {
+		if (!this.#client) {
+			throw new Error('Client is not set')
+		}
+
+		if (!this.#creationOptions) {
+			throw new Error('Creation options are not set')
+		}
+
+		const { salt, validatorAddress, owner } = this.#creationOptions
+		const myAccountFactory = new Contract(
+			MY_ACCOUNT_FACTORY_ADDRESS,
+			['function getAddress(uint256 salt, address validator, bytes calldata data) public view returns (address)'],
+			this.#client,
+		)
+		const address = await myAccountFactory['getAddress(uint256,address,bytes)'](salt, validatorAddress, owner)
+
+		if (!isAddress(address)) {
+			throw new Error('Failed to get new address')
+		}
+
+		return address
+	}
+
+	getInitCode() {
+		if (!this.#creationOptions) {
+			throw new Error('Creation options are not set')
+		}
+
+		const { salt, validatorAddress, owner } = this.#creationOptions
+		return concat([
+			MY_ACCOUNT_FACTORY_ADDRESS,
+			new Interface([
+				'function createAccount(uint256 salt, address validator, bytes calldata data)',
+			]).encodeFunctionData('createAccount', [salt, validatorAddress, owner]),
+		])
+	}
+
 	async getCallData(from: string, executions: Execution[]) {
+		if (!executions.length) {
+			return '0x'
+		}
+
 		let callData
 
 		// if one of the execution is to SA itself, it must be a single execution
@@ -85,30 +144,6 @@ export class MyAccount implements AccountCreatingVendor {
 		}
 
 		return callData
-	}
-
-	async getAddress(provider: JsonRpcProvider, salt: BytesLike, validator: string, owner: string): Promise<string> {
-		const myAccountFactory = new Contract(
-			MY_ACCOUNT_FACTORY_ADDRESS,
-			['function getAddress(uint256 salt, address validator, bytes calldata data) public view returns (address)'],
-			provider,
-		)
-		const address = await myAccountFactory['getAddress(uint256,address,bytes)'](salt, validator, owner)
-
-		if (!isAddress(address)) {
-			throw new Error('Failed to get new address')
-		}
-
-		return address
-	}
-
-	getInitCode(salt: BytesLike, validator: string, owner: string) {
-		return concat([
-			MY_ACCOUNT_FACTORY_ADDRESS,
-			new Interface([
-				'function createAccount(uint256 salt, address validator, bytes calldata data)',
-			]).encodeFunctionData('createAccount', [salt, validator, owner]),
-		])
 	}
 
 	async getInstallModuleInitData(initData: BytesLike) {

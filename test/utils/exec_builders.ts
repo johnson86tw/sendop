@@ -1,14 +1,11 @@
 import type { Execution, ExecutionBuilder } from '@/core'
-import type { Validator, Vendor } from '@/types'
+import type { AccountCreatingVendor, Validator, Vendor } from '@/types'
 import { getEntryPointContract } from '@/utils/ethers'
 import { JsonRpcProvider, toBeHex } from 'ethers'
-import { CHARITY_PAYMASTER } from './addresses'
-
-const CHARITY_PAYMASTER_ADDRESS = CHARITY_PAYMASTER
 
 export class ExecBuilder implements ExecutionBuilder {
 	#client: JsonRpcProvider
-	#vendor: Vendor
+	#vendor: Vendor | AccountCreatingVendor
 	#validator: Validator
 	#from: string
 
@@ -20,6 +17,9 @@ export class ExecBuilder implements ExecutionBuilder {
 	}
 
 	async getInitCode() {
+		if ('getInitCode' in this.#vendor) {
+			return this.#vendor.getInitCode()
+		}
 		return null
 	}
 

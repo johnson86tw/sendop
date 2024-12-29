@@ -1,22 +1,21 @@
-import { sendop } from '@/sendop'
+import { sendop } from '@/core'
 import { ECDSAValidator } from '@/validators/ecdsa_validator'
 import { Kernel } from '@/vendors/kernel'
 import { JsonRpcProvider, Wallet } from 'ethers'
-import { MyPaymaster } from './utils/myPaymaster'
-import { addresses } from './utils/addresses'
+import { CHARITY_PAYMASTER, ECDSA_VALIDATOR } from './utils/addresses'
+import { PimlicoBundler } from './utils/bundler'
+import { ExecBuilder } from './utils/exec_builders'
+import { MyPaymaster } from './utils/pm_builders'
 import { setup } from './utils/setup'
 
 // 0x71d59e7f1fc4A6574A9C91264614bFd9F9e9B4A9
 
 const { logger, chainId, CLIENT_URL, BUNDLER_URL, PRIVATE_KEY, SALT } = setup()
 
-const VALIDATOR_ADDRESS = addresses[chainId].ECDSA_VALIDATOR
-const CHARITY_PAYMASTER_ADDRESS = addresses[chainId].CHARITY_PAYMASTER
-
-const vendor = new Kernel()
-const creationParams: [string, string, string] = [VALIDATOR_ADDRESS, await new Wallet(PRIVATE_KEY).getAddress(), SALT]
+const creationParams: [string, string, string] = [ECDSA_VALIDATOR, await new Wallet(PRIVATE_KEY).getAddress(), SALT]
 
 const deployedAddress = await new Kernel().getAddress(new JsonRpcProvider(CLIENT_URL), ...creationParams)
+const FROM = deployedAddress
 
 logger.info('Chain ID', chainId)
 logger.info(`Deployed address: ${deployedAddress}`)
@@ -27,25 +26,24 @@ if (confirmed !== 'y') {
 
 logger.info('Sending op...')
 const op = await sendop({
-	networkInfo: {
-		chainId,
-		clientUrl: CLIENT_URL,
-		bundlerUrl: BUNDLER_URL,
-	},
-	validator: new ECDSAValidator({
-		address: VALIDATOR_ADDRESS,
-		clientUrl: CLIENT_URL,
-		signer: new Wallet(PRIVATE_KEY),
-	}),
-	vendor,
-	from: deployedAddress,
+	bundler: new PimlicoBundler(chainId, BUNDLER_URL),
+	from: FROM,
 	executions: [],
-	paymaster: new MyPaymaster({
+	execBuilder: new ExecBuilder({
+		client: new JsonRpcProvider(CLIENT_URL),
+		vendor: new Kernel(),
+		validator: new ECDSAValidator({
+			address: ECDSA_VALIDATOR,
+			clientUrl: CLIENT_URL,
+			signer: new Wallet(PRIVATE_KEY),
+		}),
+		from: FROM,
+	}),
+	pmBuilder: new MyPaymaster({
 		chainId,
 		clientUrl: CLIENT_URL,
-		paymasterAddress: CHARITY_PAYMASTER_ADDRESS,
+		paymasterAddress: CHARITY_PAYMASTER,
 	}),
-	creationParams,
 })
 
 logger.info('Waiting for receipt...')
