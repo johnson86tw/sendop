@@ -1,50 +1,45 @@
-import { sendop } from '@/sendop'
+import { sendop } from '@/core'
 import { ECDSAValidator } from '@/validators/ecdsa_validator'
 import { MyAccount } from '@/vendors/my_account'
-import { Interface, toNumber, Wallet } from 'ethers'
-import { addresses } from './utils/addresses'
-import { MyPaymaster } from './utils/myPaymaster'
+import { Interface, JsonRpcProvider, toNumber, Wallet } from 'ethers'
+import { CHARITY_PAYMASTER, COUNTER, ECDSA_VALIDATOR } from './utils/addresses'
+import { ExecBuilder, MyPaymaster } from './utils/builders'
+import { PimlicoBundler } from './utils/bundler'
 import { setup } from './utils/setup'
-import { Kernel } from '@/vendors/kernel'
 
 const { logger, chainId, CLIENT_URL, BUNDLER_URL, PRIVATE_KEY } = setup()
 logger.info(`Chain ID: ${chainId}`)
 
-const VALIDATOR_ADDRESS = addresses[chainId].ECDSA_VALIDATOR
-const COUNTER_ADDRESS = addresses[chainId].COUNTER
-const CHARITY_PAYMASTER_ADDRESS = addresses[chainId].CHARITY_PAYMASTER
-
 const FROM = '0x182260E0b7fF3B72DeAa6c99f1a50F2380a4Fb00'
-const vendor = new MyAccount()
 
-const num = Math.floor(Math.random() * 10000)
-logger.info(`Setting number to ${num}`)
+const number = Math.floor(Math.random() * 10000)
+logger.info(`Setting number to ${number}`)
 
 logger.info('Sending op...')
 const op = await sendop({
-	networkInfo: {
-		chainId,
-		clientUrl: CLIENT_URL,
-		bundlerUrl: BUNDLER_URL,
-	},
-	validator: new ECDSAValidator({
-		address: VALIDATOR_ADDRESS,
-		clientUrl: CLIENT_URL,
-		signer: new Wallet(PRIVATE_KEY),
-	}),
-	vendor,
+	bundler: new PimlicoBundler(chainId, BUNDLER_URL),
 	from: FROM,
 	executions: [
 		{
-			to: COUNTER_ADDRESS,
-			data: new Interface(['function setNumber(uint256)']).encodeFunctionData('setNumber', [num]),
+			to: COUNTER,
+			data: new Interface(['function setNumber(uint256)']).encodeFunctionData('setNumber', [number]),
 			value: '0x0',
 		},
 	],
-	paymaster: new MyPaymaster({
+	execBuilder: new ExecBuilder({
+		client: new JsonRpcProvider(CLIENT_URL),
+		vendor: new MyAccount(),
+		validator: new ECDSAValidator({
+			address: ECDSA_VALIDATOR,
+			clientUrl: CLIENT_URL,
+			signer: new Wallet(PRIVATE_KEY),
+		}),
+		from: FROM,
+	}),
+	pmBuilder: new MyPaymaster({
 		chainId,
 		clientUrl: CLIENT_URL,
-		paymasterAddress: CHARITY_PAYMASTER_ADDRESS,
+		paymasterAddress: CHARITY_PAYMASTER,
 	}),
 })
 

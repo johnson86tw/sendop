@@ -1,59 +1,16 @@
+import { type Execution } from '@/core'
 import { Interface, JsonRpcProvider, toBeHex, toNumber, Wallet } from 'ethers'
 import { CHARITY_PAYMASTER, COUNTER, ECDSA_VALIDATOR } from 'test/utils/addresses'
-import { MyPaymaster } from 'test/utils/myPaymaster'
+import { MyPaymaster } from 'test/utils/builders'
+import { PimlicoBundler } from 'test/utils/bundler'
 import { setup } from 'test/utils/setup'
 import { beforeAll, describe, expect, it } from 'vitest'
-import { RpcProvider } from '../rpc_provider'
-import type { Execution, Validator, Vendor } from '../types'
+import type { Validator, Vendor } from '../types'
 import { getEntryPointContract } from '../utils/ethers'
 import { ECDSAValidator } from '../validators/ecdsa_validator'
 import { MyAccount } from '../vendors/my_account'
-import type { Bundler, ExecutionBuilder, PaymasterBuilder } from './sendop'
-import { ENTRY_POINT_V07, sendUserOp } from './sendop'
-import type { UserOp, UserOpReceipt } from './types'
-
-class PimlicoBundler implements Bundler {
-	chainId: string
-	url: string
-	bundler: RpcProvider
-
-	constructor(chainId: string, url: string) {
-		this.chainId = chainId
-		this.url = url
-		this.bundler = new RpcProvider(url)
-	}
-
-	async getGasValues(userOp: UserOp) {
-		const curGasPrice = await this.bundler.send({ method: 'pimlico_getUserOperationGasPrice' })
-		// Note: user operation max fee per gas must be larger than 0 during gas estimation
-		userOp.maxFeePerGas = curGasPrice.standard.maxFeePerGas
-		const estimateGas = await this.bundler.send({
-			method: 'eth_estimateUserOperationGas',
-			params: [userOp, ENTRY_POINT_V07],
-		})
-
-		return {
-			maxFeePerGas: userOp.maxFeePerGas,
-			maxPriorityFeePerGas: curGasPrice.standard.maxPriorityFeePerGas,
-			preVerificationGas: estimateGas.preVerificationGas,
-			verificationGasLimit: estimateGas.verificationGasLimit,
-			callGasLimit: estimateGas.callGasLimit,
-			paymasterVerificationGasLimit: estimateGas.paymasterVerificationGasLimit,
-			paymasterPostOpGasLimit: estimateGas.paymasterPostOpGasLimit,
-		}
-	}
-
-	async sendUserOperation(userOp: UserOp): Promise<string> {
-		return await this.bundler.send({
-			method: 'eth_sendUserOperation',
-			params: [userOp, ENTRY_POINT_V07],
-		})
-	}
-
-	async getUserOperationReceipt(hash: string): Promise<UserOpReceipt> {
-		return await this.bundler.send({ method: 'eth_getUserOperationReceipt', params: [hash] })
-	}
-}
+import type { ExecutionBuilder } from './sendop'
+import { sendop } from './sendop'
 
 class ExecBuilder implements ExecutionBuilder {
 	#client: JsonRpcProvider
@@ -91,27 +48,6 @@ class ExecBuilder implements ExecutionBuilder {
 	}
 }
 
-class PmBuilder implements PaymasterBuilder {
-	#chainId: string
-	#clientUrl: string
-	#paymasterAddress: string
-	#pm: MyPaymaster
-
-	constructor(options: { chainId: string; clientUrl: string; paymasterAddress: string }) {
-		this.#chainId = options.chainId
-		this.#clientUrl = options.clientUrl
-		this.#paymasterAddress = options.paymasterAddress
-		this.#pm = new MyPaymaster({
-			chainId: this.#chainId,
-			clientUrl: this.#clientUrl,
-			paymasterAddress: this.#paymasterAddress,
-		})
-	}
-	async getPaymasterStubData(userOp: UserOp) {
-		return await this.#pm.getPaymasterStubData([userOp, ENTRY_POINT_V07, this.#chainId, {}])
-	}
-}
-
 const { logger, chainId, CLIENT_URL, BUNDLER_URL, PRIVATE_KEY } = setup()
 logger.info(`Chain ID: ${chainId}`)
 
@@ -130,7 +66,7 @@ describe('sendop', () => {
 
 		const number = Math.floor(Math.random() * 10000)
 
-		const op = await sendUserOp({
+		const op = await sendop({
 			bundler,
 			from: FROM,
 			executions: [
@@ -150,7 +86,7 @@ describe('sendop', () => {
 				}),
 				from: FROM,
 			}),
-			pmBuilder: new PmBuilder({
+			pmBuilder: new MyPaymaster({
 				chainId,
 				clientUrl: CLIENT_URL,
 				paymasterAddress: CHARITY_PAYMASTER,

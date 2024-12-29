@@ -1,16 +1,11 @@
-import type { JsonRpcProvider } from '@/utils/ethers'
-import type { UserOp } from './utils/aa'
+import type { JsonRpcProvider } from 'ethers'
+import type { UserOp } from '@/core'
+import type { Execution } from '@/core'
 
 export type NetworkInfo = {
 	chainId: string
 	clientUrl: string
 	bundlerUrl: string
-}
-
-export type Execution = {
-	to: string
-	data: string
-	value: string
 }
 
 export interface Vendor {

@@ -57,7 +57,7 @@ export type GetPaymasterDataResult = {
 	paymasterAndData?: string // Paymaster and data (entrypoint v0.6)
 }
 
-export async function sendUserOp(options: {
+export async function sendop(options: {
 	bundler: Bundler
 	from: string
 	executions: Execution[]

@@ -8,10 +8,11 @@ import {
 	toBeHex,
 	zeroPadValue,
 	type BytesLike,
-} from '@/utils/ethers'
-import type { AccountCreatingVendor, Execution } from '../types'
-import { abiEncode, padLeft } from '@/utils/ethers'
+} from 'ethers'
+import type { AccountCreatingVendor } from '../types'
+import { padLeft } from '@/utils/ethers'
 import { MY_ACCOUNT_FACTORY_ADDRESS } from 'test/utils/addresses'
+import { abiEncode, type Execution } from '@/core'
 
 export class MyAccount implements AccountCreatingVendor {
 	static readonly accountId = 'johnson86tw.0.0.1'
