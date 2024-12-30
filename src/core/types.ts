@@ -1,5 +1,60 @@
 import type { TransactionReceipt } from 'ethers'
 
+// ========================================== interfaces ==========================================
+
+export interface Bundler {
+	chainId: string
+	getGasValues(userOp: UserOp): Promise<{
+		maxFeePerGas: string
+		maxPriorityFeePerGas: string
+		preVerificationGas: string
+		verificationGasLimit: string
+		callGasLimit: string
+		paymasterVerificationGasLimit: string
+		paymasterPostOpGasLimit: string
+	}>
+	sendUserOperation(userOp: UserOp): Promise<string>
+	getUserOperationReceipt(hash: string): Promise<UserOpReceipt>
+}
+
+export interface OperationBuilder {
+	getInitCode?(): Promise<string> | string
+	getNonce(): Promise<string> | string
+	getCallData(executions: Execution[]): Promise<string> | string
+	getDummySignature(): Promise<string> | string
+	getSignature(userOpHash: string): Promise<string> | string
+}
+
+/**
+ * refer to ERC-7677
+ */
+export interface PaymasterBuilder {
+	getPaymasterStubData(userOp: UserOp): Promise<GetPaymasterStubDataResult> | GetPaymasterStubDataResult
+	getPaymasterData?(userOp: UserOp): Promise<GetPaymasterDataResult> | GetPaymasterDataResult
+}
+
+// ========================================== types ==========================================
+
+export type Execution = {
+	to: string
+	data: string
+	value: string
+}
+
+export type GetPaymasterStubDataResult = {
+	sponsor?: { name: string; icon?: string } // Sponsor info
+	paymaster?: string // Paymaster address (entrypoint v0.7)
+	paymasterData?: string // Paymaster data (entrypoint v0.7)
+	paymasterVerificationGasLimit?: string // Paymaster validation gas (entrypoint v0.7)
+	paymasterPostOpGasLimit?: string // Paymaster post-op gas (entrypoint v0.7)
+	isFinal?: boolean // Indicates that the caller does not need to call pm_getPaymasterData
+}
+
+export type GetPaymasterDataResult = {
+	paymaster?: string // Paymaster address (entrypoint v0.7)
+	paymasterData?: string // Paymaster data (entrypoint v0.7)
+}
+
 export type UserOp = {
 	sender: string
 	nonce: string

@@ -1,19 +1,16 @@
-import { hexlify, randomBytes } from 'ethers'
-import { setup } from 'test/utils/setup'
+import { hexlify, randomBytes, JsonRpcProvider, Wallet } from 'ethers'
+import { setup, CHARITY_PAYMASTER, ECDSA_VALIDATOR, PimlicoBundler, OpBuilder, MyPaymaster } from 'test/utils'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { Kernel } from './kernel'
-import { CHARITY_PAYMASTER } from 'test/utils/addresses'
 import { ECDSAValidator } from '@/validators/ecdsa_validator'
-import { ECDSA_VALIDATOR } from 'test/utils/addresses'
-import { JsonRpcProvider, Wallet } from 'ethers'
 import { sendop } from '..'
-import { PimlicoBundler } from 'test/utils/bundler'
-import { ExecBuilder } from 'test/utils/exec_builders'
-import { MyPaymaster } from 'test/utils/pm_builders'
 
 const { logger, chainId, CLIENT_URL, BUNDLER_URL, PRIVATE_KEY } = setup({
 	chainId: '11155111',
 })
+
+logger.info(`Chain ID: ${chainId}`)
+
 describe('Kernel', () => {
 	let signer: Wallet
 	let client: JsonRpcProvider
@@ -108,8 +105,8 @@ describe('Kernel', () => {
 				bundler: new PimlicoBundler(chainId, BUNDLER_URL),
 				from: FROM,
 				executions: [],
-				execBuilder: new ExecBuilder({
-					client: new JsonRpcProvider(CLIENT_URL),
+				opBuilder: new OpBuilder({
+					client,
 					vendor,
 					validator: new ECDSAValidator({
 						address: ECDSA_VALIDATOR,
@@ -125,6 +122,7 @@ describe('Kernel', () => {
 					paymasterAddress: CHARITY_PAYMASTER,
 				}),
 			})
+			logger.info(`hash: ${op.hash}`)
 			await op.wait()
 			const code = await client.getCode(deployedAddress)
 			expect(code).not.toBe('0x')

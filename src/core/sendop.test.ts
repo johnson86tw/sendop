@@ -1,9 +1,14 @@
 import { hexlify, Interface, JsonRpcProvider, randomBytes, toNumber, Wallet } from 'ethers'
-import { CHARITY_PAYMASTER, COUNTER, ECDSA_VALIDATOR } from 'test/utils/addresses'
-import { PimlicoBundler } from 'test/utils/bundler'
-import { ExecBuilder } from 'test/utils/exec_builders'
-import { MyPaymaster, PimlicoPaymaster } from 'test/utils/pm_builders'
-import { setup } from 'test/utils/setup'
+import {
+	CHARITY_PAYMASTER,
+	COUNTER,
+	ECDSA_VALIDATOR,
+	PimlicoBundler,
+	MyPaymaster,
+	PimlicoPaymaster,
+	setup,
+	OpBuilder,
+} from 'test/utils'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { ECDSAValidator } from '../validators/ecdsa_validator'
 import { MyAccount } from '../vendors/my_account'
@@ -41,7 +46,7 @@ describe('sendop', () => {
 					value: '0x0',
 				},
 			],
-			execBuilder: new ExecBuilder({
+			opBuilder: new OpBuilder({
 				client: new JsonRpcProvider(CLIENT_URL),
 				vendor: new MyAccount(),
 				validator: new ECDSAValidator({
@@ -81,7 +86,7 @@ describe('sendop', () => {
 					value: '0x0',
 				},
 			],
-			execBuilder: new ExecBuilder({
+			opBuilder: new OpBuilder({
 				client: new JsonRpcProvider(CLIENT_URL),
 				vendor: new MyAccount(),
 				validator: new ECDSAValidator({
@@ -117,7 +122,7 @@ describe('sendop', () => {
 			bundler: new PimlicoBundler(chainId, BUNDLER_URL),
 			from: FROM,
 			executions: [],
-			execBuilder: new ExecBuilder({
+			opBuilder: new OpBuilder({
 				client: new JsonRpcProvider(CLIENT_URL),
 				vendor,
 				validator: new ECDSAValidator({
@@ -160,7 +165,7 @@ describe('sendop', () => {
 					value: '0x0',
 				},
 			],
-			execBuilder: new ExecBuilder({
+			opBuilder: new OpBuilder({
 				client: new JsonRpcProvider(CLIENT_URL),
 				vendor,
 				validator: new ECDSAValidator({

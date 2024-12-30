@@ -1,74 +1,31 @@
 import { AbiCoder, concat, keccak256, toBeHex, zeroPadValue } from 'ethers'
-import type { PackedUserOp, UserOp, UserOpReceipt } from './types'
+import type {
+	Bundler,
+	Execution,
+	OperationBuilder,
+	PaymasterBuilder,
+	PackedUserOp,
+	UserOp,
+	UserOpReceipt,
+} from './types'
 
 export const ENTRY_POINT_V07 = '0x0000000071727De22E5E9d8BAf0edAc6f37da032'
-
-export interface Bundler {
-	chainId: string
-	getGasValues(userOp: UserOp): Promise<{
-		maxFeePerGas: string
-		maxPriorityFeePerGas: string
-		preVerificationGas: string
-		verificationGasLimit: string
-		callGasLimit: string
-		paymasterVerificationGasLimit: string
-		paymasterPostOpGasLimit: string
-	}>
-	sendUserOperation(userOp: UserOp): Promise<string>
-	getUserOperationReceipt(hash: string): Promise<UserOpReceipt>
-}
-
-export interface ExecutionBuilder {
-	getInitCode?(): Promise<string> | string
-	getNonce(): Promise<string> | string
-	getCallData(executions: Execution[]): Promise<string> | string
-	getDummySignature(): Promise<string> | string
-	getSignature(userOpHash: string): Promise<string> | string
-}
-
-export type Execution = {
-	to: string
-	data: string
-	value: string
-}
-
-/**
- * refer to ERC-7677
- */
-export interface PaymasterBuilder {
-	getPaymasterStubData(userOp: UserOp): Promise<GetPaymasterStubDataResult> | GetPaymasterStubDataResult
-	getPaymasterData?(userOp: UserOp): Promise<GetPaymasterDataResult> | GetPaymasterDataResult
-}
-
-export type GetPaymasterStubDataResult = {
-	sponsor?: { name: string; icon?: string } // Sponsor info
-	paymaster?: string // Paymaster address (entrypoint v0.7)
-	paymasterData?: string // Paymaster data (entrypoint v0.7)
-	paymasterVerificationGasLimit?: string // Paymaster validation gas (entrypoint v0.7)
-	paymasterPostOpGasLimit?: string // Paymaster post-op gas (entrypoint v0.7)
-	isFinal?: boolean // Indicates that the caller does not need to call pm_getPaymasterData
-}
-
-export type GetPaymasterDataResult = {
-	paymaster?: string // Paymaster address (entrypoint v0.7)
-	paymasterData?: string // Paymaster data (entrypoint v0.7)
-}
 
 export async function sendop(options: {
 	bundler: Bundler
 	from: string
 	executions: Execution[]
-	execBuilder: ExecutionBuilder
+	opBuilder: OperationBuilder
 	pmBuilder?: PaymasterBuilder
 }) {
-	const { bundler, from, executions, execBuilder, pmBuilder } = options
+	const { bundler, from, executions, opBuilder, pmBuilder } = options
 
 	// build userOp
 	const userOp = getEmptyUserOp()
 	userOp.sender = from
 
-	if (execBuilder.getInitCode) {
-		const initCode = await execBuilder.getInitCode()
+	if (opBuilder.getInitCode) {
+		const initCode = await opBuilder.getInitCode()
 		if (initCode && initCode !== '0x') {
 			const initCodeWithoutPrefix = initCode.slice(2) // remove 0x prefix
 			userOp.factory = '0x' + initCodeWithoutPrefix.slice(0, 40)
@@ -76,9 +33,9 @@ export async function sendop(options: {
 		}
 	}
 
-	userOp.nonce = await execBuilder.getNonce()
-	userOp.callData = await execBuilder.getCallData(executions)
-	userOp.signature = await execBuilder.getDummySignature()
+	userOp.nonce = await opBuilder.getNonce()
+	userOp.callData = await opBuilder.getCallData(executions)
+	userOp.signature = await opBuilder.getDummySignature()
 
 	// if pm, get pmStubData
 	let isFinal = false
@@ -112,7 +69,7 @@ export async function sendop(options: {
 
 	// sign userOp
 	const userOpHash = getUserOpHash(packUserOp(userOp), ENTRY_POINT_V07, bundler.chainId)
-	userOp.signature = await execBuilder.getSignature(userOpHash)
+	userOp.signature = await opBuilder.getSignature(userOpHash)
 
 	// send userOp
 	await bundler.sendUserOperation(userOp)

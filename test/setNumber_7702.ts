@@ -2,11 +2,7 @@ import { sendop } from '@/core'
 import { ECDSAValidator } from '@/validators/ecdsa_validator'
 import { MyAccount } from '@/vendors/my_account'
 import { Interface, JsonRpcProvider, toNumber, Wallet } from 'ethers'
-import { CHARITY_PAYMASTER, COUNTER, ECDSA_VALIDATOR } from './utils/addresses'
-import { PimlicoBundler } from './utils/bundler'
-import { ExecBuilder } from './utils/exec_builders'
-import { MyPaymaster } from './utils/pm_builders'
-import { setup } from './utils/setup'
+import { CHARITY_PAYMASTER, COUNTER, ECDSA_VALIDATOR, PimlicoBundler, MyPaymaster, setup, OpBuilder } from './utils'
 
 // error: AccountAccessUnauthorized()
 
@@ -32,7 +28,7 @@ const op = await sendop({
 			value: '0x0',
 		},
 	],
-	execBuilder: new ExecBuilder({
+	opBuilder: new OpBuilder({
 		client: new JsonRpcProvider(CLIENT_URL),
 		vendor: new MyAccount(),
 		validator: new ECDSAValidator({

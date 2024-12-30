@@ -2,7 +2,7 @@ import { sendop } from '@/core'
 import { ECDSAValidator } from '@/validators/ecdsa_validator'
 import { MyAccount } from '@/vendors/my_account'
 import { hexlify, JsonRpcProvider, randomBytes, Wallet } from 'ethers'
-import { CHARITY_PAYMASTER, ECDSA_VALIDATOR, ExecBuilder, MyPaymaster, PimlicoBundler, setup } from './utils'
+import { CHARITY_PAYMASTER, ECDSA_VALIDATOR, OpBuilder, MyPaymaster, PimlicoBundler, setup } from './utils'
 
 const { logger, chainId, CLIENT_URL, BUNDLER_URL, PRIVATE_KEY, SALT } = setup()
 
@@ -27,7 +27,7 @@ const op = await sendop({
 	bundler: new PimlicoBundler(chainId, BUNDLER_URL),
 	from: FROM,
 	executions: [],
-	execBuilder: new ExecBuilder({
+	opBuilder: new OpBuilder({
 		client: new JsonRpcProvider(CLIENT_URL),
 		vendor,
 		validator: new ECDSAValidator({

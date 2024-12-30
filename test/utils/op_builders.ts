@@ -1,9 +1,9 @@
-import type { Execution, ExecutionBuilder } from '@/core'
+import type { Execution, OperationBuilder } from '@/core'
 import type { AccountCreatingVendor, ERC7579Vendor, Validator, Vendor } from '@/types'
 import { getEntryPointContract } from '@/utils/ethers'
 import { JsonRpcProvider, toBeHex } from 'ethers'
 
-export class ExecBuilder implements ExecutionBuilder {
+export class OpBuilder implements OperationBuilder {
 	#client: JsonRpcProvider
 	#vendor: Vendor | ERC7579Vendor | AccountCreatingVendor
 	#validator: Validator
