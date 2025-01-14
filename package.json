@@ -1,11 +1,11 @@
 {
-	"name": "sakit",
+	"name": "sendop",
 	"version": "0.0.1",
 	"description": "",
 	"author": "Johnson Chen <johnson86tw@gmail.com>",
-	"repository": "https://github.com/johnson86tw/sakit",
-	"bugs": "https://github.com/johnson86tw/sakit/issues",
-	"homepage": "https://github.com/johnson86tw/sakit#readme",
+	"repository": "https://github.com/johnson86tw/sendop",
+	"bugs": "https://github.com/johnson86tw/sendop/issues",
+	"homepage": "https://github.com/johnson86tw/sendop#readme",
 	"license": "",
 	"keywords": [
 		"account abstraction",
