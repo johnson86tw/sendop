@@ -11,8 +11,9 @@ import {
 	zeroPadValue,
 	type BytesLike,
 } from 'ethers'
-import { MY_ACCOUNT_FACTORY_ADDRESS } from 'test/utils/addresses'
 import type { AccountCreatingVendor } from '../types'
+
+const MY_ACCOUNT_FACTORY_ADDRESS = '0xd4650238fcc60f64DfCa4e095dEe0081Dd4734b0'
 
 export class MyAccount implements AccountCreatingVendor {
 	static readonly accountId = 'johnson86tw.0.0.1'
