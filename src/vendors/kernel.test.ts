@@ -94,7 +94,7 @@ describe('Kernel', () => {
 			const owner = '0xd78B5013757Ea4A7841811eF770711e6248dC282'
 			const salt = hexlify(randomBytes(32))
 
-			const address = await kernel.getNewAddress({ salt, validatorAddress, owner })
+			const address = await Kernel.getNewAddress(client, { salt, validatorAddress, owner })
 			expect(address).not.toBe('0x0000000000000000000000000000000000000000')
 		})
 	})
@@ -114,7 +114,7 @@ describe('Kernel', () => {
 				pmBuilder,
 				creationOptions,
 			})
-			const deployedAddress = await kernel.getNewAddress(creationOptions)
+			const deployedAddress = await Kernel.getNewAddress(client, creationOptions)
 			const op = await kernel.deploy()
 			logger.info(`hash: ${op.hash}`)
 			await op.wait()

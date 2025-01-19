@@ -26,7 +26,7 @@ const kernel = new Kernel({
 	}),
 	creationOptions,
 })
-const deployedAddress = await kernel.getNewAddress(creationOptions)
+const deployedAddress = await kernel.getAddress()
 
 logger.info('Chain ID', chainId)
 logger.info(`Creation options: ${JSON.stringify(creationOptions)}`)

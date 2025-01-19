@@ -1,6 +1,6 @@
-import type { Bundler, Execution, PaymasterBuilder } from '@/core'
+import type { Bundler, Execution, PaymasterBuilder, SendOpResult } from '@/core'
 import { sendop } from '@/core'
-import type { Validator } from '@/types'
+import type { ERC4337Account, Validator } from '@/types'
 import { is32BytesHexString } from '@/utils/ethers'
 import { concat, Contract, isAddress, JsonRpcProvider, ZeroAddress } from 'ethers'
 import { OpBuilder } from '@/OpBuilder'
@@ -14,7 +14,7 @@ export type KernelCreationOptions = {
 	owner: string
 }
 
-export class Kernel extends KernelBase {
+export class Kernel extends KernelBase implements ERC4337Account {
 	client: JsonRpcProvider
 	bundler: Bundler
 	validator: Validator
@@ -39,7 +39,7 @@ export class Kernel extends KernelBase {
 		this.creationOptions = options.creationOptions
 	}
 
-	async send(address: string, executions: Execution[], pmBuilder?: PaymasterBuilder) {
+	async send(address: string, executions: Execution[], pmBuilder?: PaymasterBuilder): Promise<SendOpResult> {
 		return await sendop({
 			bundler: this.bundler,
 			from: address,
@@ -54,8 +54,8 @@ export class Kernel extends KernelBase {
 		})
 	}
 
-	async deploy(pmBuilder?: PaymasterBuilder) {
-		const deployedAddress = await this.getNewAddress()
+	async deploy(pmBuilder?: PaymasterBuilder): Promise<SendOpResult> {
+		const deployedAddress = await this.getAddress()
 		return await sendop({
 			bundler: this.bundler,
 			from: deployedAddress,
@@ -71,17 +71,51 @@ export class Kernel extends KernelBase {
 		})
 	}
 
+	static async getNewAddress(client: JsonRpcProvider, creationOptions: KernelCreationOptions) {
+		const { salt, validatorAddress, owner } = creationOptions
+
+		if (!is32BytesHexString(salt)) {
+			throw new Error('Salt should be 32 bytes')
+		}
+
+		const kernelFactory = new Contract(KERNEL_FACTORY_ADDRESS, this.kernelFactoryInterface, client)
+
+		function getInitializeData(validator: string, owner: string) {
+			if (!isAddress(validator) || !isAddress(owner)) {
+				throw new Error('Invalid address', { cause: { validator, owner } })
+			}
+
+			return KernelBase.kernelInterface.encodeFunctionData('initialize', [
+				concat(['0x01', validator]),
+				ZeroAddress,
+				owner,
+				'0x',
+				[],
+			])
+		}
+
+		const address = await kernelFactory['getAddress(bytes,bytes32)'](
+			getInitializeData(validatorAddress, owner),
+			salt,
+		)
+
+		if (!isAddress(address)) {
+			throw new Error('Failed to get new address')
+		}
+
+		return address
+	}
+
 	// if optinos is provided, it will use the options instead of the creationOptions in the constructor
-	async getNewAddress(options?: KernelCreationOptions): Promise<string> {
+	async getAddress(): Promise<string> {
 		if (!this.client) {
 			throw new Error('Client is not set')
 		}
 
-		let creationOptions = options ?? this.creationOptions
-		if (!creationOptions) {
+		if (!this.creationOptions) {
 			throw new Error('Creation options are not set')
 		}
-		const { salt, validatorAddress, owner } = creationOptions
+		const { salt, validatorAddress, owner } = this.creationOptions
 
 		if (!is32BytesHexString(salt)) {
 			throw new Error('Salt should be 32 bytes')

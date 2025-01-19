@@ -5,6 +5,7 @@ import type {
 	OperationBuilder,
 	PackedUserOp,
 	PaymasterBuilder,
+	SendOpResult,
 	UserOp,
 	UserOpReceipt,
 } from './types'
@@ -17,7 +18,7 @@ export async function sendop(options: {
 	executions: Execution[]
 	opBuilder: OperationBuilder
 	pmBuilder?: PaymasterBuilder
-}) {
+}): Promise<SendOpResult> {
 	const { bundler, from, executions, opBuilder, pmBuilder } = options
 
 	// build userOp

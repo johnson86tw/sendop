@@ -108,3 +108,8 @@ export type UserOpReceipt = {
 	logs: UserOpLog[]
 	receipt: TransactionReceipt
 }
+
+export type SendOpResult = {
+	hash: string
+	wait(): Promise<UserOpReceipt>
+}

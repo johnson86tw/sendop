@@ -8,6 +8,7 @@ export class PimlicoBundler implements Bundler {
 	bundler: RpcProvider
 
 	constructor(chainId: string, url: string) {
+		// TODO: check if the bundler url is valid
 		this.chainId = chainId
 		this.url = url
 		this.bundler = new RpcProvider(url)
