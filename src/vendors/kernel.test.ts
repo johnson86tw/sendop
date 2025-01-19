@@ -1,4 +1,4 @@
-import { type Bundler, type PaymasterBuilder } from '@/core'
+import { type Bundler, type PaymasterGetter } from '@/core'
 import type { Validator } from '@/types'
 import { ECDSAValidator } from '@/validators/ecdsa_validator'
 import { hexlify, Interface, JsonRpcProvider, randomBytes, toNumber, Wallet } from 'ethers'
@@ -17,7 +17,7 @@ describe('Kernel', () => {
 	let client: JsonRpcProvider
 	let bundler: Bundler
 	let validator: Validator
-	let pmBuilder: PaymasterBuilder
+	let pmGetter: PaymasterGetter
 	let kernel: Kernel
 	const KERNEL_ADDRESS = '0x41f88637a749c815a31fe2867fbdf59af7b2fceb'
 
@@ -30,13 +30,13 @@ describe('Kernel', () => {
 			clientUrl: CLIENT_URL,
 			signer: new Wallet(PRIVATE_KEY),
 		})
-		pmBuilder = new MyPaymaster({
+		pmGetter = new MyPaymaster({
 			chainId,
 			clientUrl: CLIENT_URL,
 			paymasterAddress: CHARITY_PAYMASTER,
 		})
 
-		kernel = new Kernel({ client, bundler, validator, pmBuilder })
+		kernel = new Kernel({ client, bundler, validator, pmGetter })
 		logger.info(`Signer: ${signer.address}`)
 	})
 
@@ -111,7 +111,7 @@ describe('Kernel', () => {
 				client,
 				bundler,
 				validator,
-				pmBuilder,
+				pmGetter,
 				creationOptions,
 			})
 			const deployedAddress = await Kernel.getNewAddress(client, creationOptions)

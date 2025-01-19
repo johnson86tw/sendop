@@ -1,4 +1,4 @@
-import type { Execution, PaymasterBuilder, SendOpResult } from '@/core'
+import type { Execution, PaymasterGetter, SendOpResult } from '@/core'
 
 export interface Vendor {
 	getNonceKey(validator: string): Promise<string> | string
@@ -6,8 +6,8 @@ export interface Vendor {
 }
 
 export interface ERC4337Account extends Vendor {
-	deploy(pmBuilder?: PaymasterBuilder): Promise<SendOpResult>
-	send(address: string, executions: Execution[], pmBuilder?: PaymasterBuilder): Promise<SendOpResult>
+	deploy(pmGetter?: PaymasterGetter): Promise<SendOpResult>
+	send(address: string, executions: Execution[], pmGetter?: PaymasterGetter): Promise<SendOpResult>
 }
 
 export interface ERC7579Vendor extends Vendor {

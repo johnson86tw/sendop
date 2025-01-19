@@ -1,11 +1,11 @@
-import type { GetPaymasterDataResult, GetPaymasterStubDataResult, PaymasterBuilder, UserOp } from '@/core'
+import type { GetPaymasterDataResult, GetPaymasterStubDataResult, PaymasterGetter, UserOp } from '@/core'
 import { ENTRY_POINT_V07, RpcProvider } from '@/index'
 import { Contract, JsonRpcProvider, toBeHex } from 'ethers'
 import { CHARITY_PAYMASTER } from './addresses'
 
 const CHARITY_PAYMASTER_ADDRESS = CHARITY_PAYMASTER
 
-export class MyPaymaster implements PaymasterBuilder {
+export class MyPaymaster implements PaymasterGetter {
 	chainId: string
 	clientUrl: string
 	#client: JsonRpcProvider
@@ -57,7 +57,7 @@ export class MyPaymaster implements PaymasterBuilder {
 	}
 }
 
-export class PimlicoPaymaster implements PaymasterBuilder {
+export class PimlicoPaymaster implements PaymasterGetter {
 	chainId: string
 	paymaster: RpcProvider
 

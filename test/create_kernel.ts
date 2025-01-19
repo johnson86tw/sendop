@@ -19,7 +19,7 @@ const kernel = new Kernel({
 		clientUrl: CLIENT_URL,
 		signer: new Wallet(PRIVATE_KEY),
 	}),
-	pmBuilder: new MyPaymaster({
+	pmGetter: new MyPaymaster({
 		chainId,
 		clientUrl: CLIENT_URL,
 		paymasterAddress: CHARITY_PAYMASTER,

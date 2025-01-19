@@ -55,7 +55,7 @@ describe('sendop', () => {
 				}),
 				from: FROM,
 			}),
-			pmBuilder: new MyPaymaster({
+			pmGetter: new MyPaymaster({
 				chainId,
 				clientUrl: CLIENT_URL,
 				paymasterAddress: CHARITY_PAYMASTER,
@@ -95,7 +95,7 @@ describe('sendop', () => {
 				}),
 				from: FROM,
 			}),
-			pmBuilder: new PimlicoPaymaster({
+			pmGetter: new PimlicoPaymaster({
 				chainId,
 				url: BUNDLER_URL,
 			}),
@@ -131,7 +131,7 @@ describe('sendop', () => {
 				}),
 				from: FROM,
 			}),
-			pmBuilder: new MyPaymaster({
+			pmGetter: new MyPaymaster({
 				chainId,
 				clientUrl: CLIENT_URL,
 				paymasterAddress: CHARITY_PAYMASTER,
@@ -174,7 +174,7 @@ describe('sendop', () => {
 				}),
 				from: FROM,
 			}),
-			pmBuilder: new MyPaymaster({
+			pmGetter: new MyPaymaster({
 				chainId,
 				clientUrl: CLIENT_URL,
 				paymasterAddress: CHARITY_PAYMASTER,

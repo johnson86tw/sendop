@@ -27,7 +27,7 @@ export interface OperationGetter {
 /**
  * refer to ERC-7677
  */
-export interface PaymasterBuilder {
+export interface PaymasterGetter {
 	getPaymasterStubData(userOp: UserOp): Promise<GetPaymasterStubDataResult> | GetPaymasterStubDataResult
 	getPaymasterData?(userOp: UserOp): Promise<GetPaymasterDataResult> | GetPaymasterDataResult
 }

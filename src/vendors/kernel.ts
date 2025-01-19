@@ -1,4 +1,4 @@
-import type { Bundler, Execution, PaymasterBuilder, SendOpResult } from '@/core'
+import type { Bundler, Execution, PaymasterGetter, SendOpResult } from '@/core'
 import type { ERC4337Account, Validator } from '@/types'
 import { is32BytesHexString } from '@/utils/ethers'
 import { concat, Contract, isAddress, JsonRpcProvider, ZeroAddress } from 'ethers'
@@ -18,14 +18,14 @@ export class Kernel extends KernelBase implements ERC4337Account {
 	bundler: Bundler
 	validator: Validator
 
-	pmBuilder?: PaymasterBuilder
+	pmGetter?: PaymasterGetter
 	creationOptions?: KernelCreationOptions
 
 	constructor(options: {
 		client: JsonRpcProvider
 		bundler: Bundler
 		validator: Validator
-		pmBuilder?: PaymasterBuilder
+		pmGetter?: PaymasterGetter
 		creationOptions?: KernelCreationOptions
 	}) {
 		super()
@@ -34,11 +34,11 @@ export class Kernel extends KernelBase implements ERC4337Account {
 		this.bundler = options.bundler
 		this.validator = options.validator
 
-		this.pmBuilder = options.pmBuilder
+		this.pmGetter = options.pmGetter
 		this.creationOptions = options.creationOptions
 	}
 
-	async send(address: string, executions: Execution[], pmBuilder?: PaymasterBuilder): Promise<SendOpResult> {
+	async send(address: string, executions: Execution[], pmGetter?: PaymasterGetter): Promise<SendOpResult> {
 		return await sendop({
 			bundler: this.bundler,
 			from: address,
@@ -49,11 +49,11 @@ export class Kernel extends KernelBase implements ERC4337Account {
 				validator: this.validator,
 				from: address,
 			}),
-			pmBuilder: pmBuilder ?? this.pmBuilder,
+			pmGetter: pmGetter ?? this.pmGetter,
 		})
 	}
 
-	async deploy(pmBuilder?: PaymasterBuilder): Promise<SendOpResult> {
+	async deploy(pmGetter?: PaymasterGetter): Promise<SendOpResult> {
 		const deployedAddress = await this.getAddress()
 		return await sendop({
 			bundler: this.bundler,
@@ -65,7 +65,7 @@ export class Kernel extends KernelBase implements ERC4337Account {
 				validator: this.validator,
 				from: deployedAddress,
 			}),
-			pmBuilder: pmBuilder ?? this.pmBuilder,
+			pmGetter: pmGetter ?? this.pmGetter,
 			initCode: this.getInitCode(),
 		})
 	}

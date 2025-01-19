@@ -4,7 +4,7 @@ import type {
 	Execution,
 	OperationGetter,
 	PackedUserOp,
-	PaymasterBuilder,
+	PaymasterGetter,
 	SendOpResult,
 	UserOp,
 	UserOpReceipt,
@@ -17,10 +17,10 @@ export async function sendop(options: {
 	from: string
 	executions: Execution[]
 	opGetter: OperationGetter
-	pmBuilder?: PaymasterBuilder
+	pmGetter?: PaymasterGetter
 	initCode?: string // userOp.factory ++ userOp.factoryData
 }): Promise<SendOpResult> {
-	const { bundler, from, executions, opGetter, pmBuilder, initCode } = options
+	const { bundler, from, executions, opGetter, pmGetter, initCode } = options
 
 	// build userOp
 	const userOp = getEmptyUserOp()
@@ -41,8 +41,8 @@ export async function sendop(options: {
 
 	// if pm, get pmStubData
 	let isFinal = false
-	if (pmBuilder) {
-		const pmStubData = await pmBuilder.getPaymasterStubData(userOp)
+	if (pmGetter) {
+		const pmStubData = await pmGetter.getPaymasterStubData(userOp)
 		userOp.paymaster = pmStubData.paymaster ?? null
 		userOp.paymasterData = pmStubData.paymasterData ?? '0x'
 		userOp.paymasterVerificationGasLimit = pmStubData.paymasterVerificationGasLimit ?? '0x0'
@@ -63,8 +63,8 @@ export async function sendop(options: {
 	userOp.paymasterPostOpGasLimit = gasValues.paymasterPostOpGasLimit
 
 	// if pm && !isFinal, get pmData
-	if (pmBuilder && pmBuilder.getPaymasterData && !isFinal) {
-		const pmData = await pmBuilder.getPaymasterData(userOp)
+	if (pmGetter && pmGetter.getPaymasterData && !isFinal) {
+		const pmData = await pmGetter.getPaymasterData(userOp)
 		userOp.paymaster = pmData.paymaster ?? null
 		userOp.paymasterData = pmData.paymasterData ?? '0x'
 	}

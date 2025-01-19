@@ -36,7 +36,7 @@ const op = await sendop({
 		}),
 		from: FROM,
 	}),
-	pmBuilder: new PimlicoPaymaster({
+	pmGetter: new PimlicoPaymaster({
 		chainId,
 		url: BUNDLER_URL,
 	}),

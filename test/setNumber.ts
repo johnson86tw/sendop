@@ -34,7 +34,7 @@ const op = await sendop({
 		}),
 		from: FROM,
 	}),
-	pmBuilder: new MyPaymaster({
+	pmGetter: new MyPaymaster({
 		chainId,
 		clientUrl: CLIENT_URL,
 		paymasterAddress: CHARITY_PAYMASTER,
