@@ -3,7 +3,7 @@ import { sendop } from '@/core'
 import type { Validator } from '@/types'
 import { is32BytesHexString } from '@/utils/ethers'
 import { concat, Contract, isAddress, JsonRpcProvider, ZeroAddress } from 'ethers'
-import { OpBuilder } from 'test/utils'
+import { OpBuilder } from '@/OpBuilder'
 import { KernelBase } from './kernel_base'
 
 const KERNEL_FACTORY_ADDRESS = '0xaac5D4240AF87249B3f71BC8E4A2cae074A3E419'

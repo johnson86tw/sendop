@@ -7,13 +7,12 @@ import {
 	MyPaymaster,
 	PimlicoPaymaster,
 	setup,
-	OpBuilder,
 } from 'test/utils'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { ECDSAValidator } from '../validators/ecdsa_validator'
 import { MyAccount } from '../vendors/my_account'
 import { sendop } from './sendop'
-
+import { OpBuilder } from '@/OpBuilder'
 const { logger, chainId, CLIENT_URL, BUNDLER_URL, PRIVATE_KEY } = setup({
 	chainId: '11155111',
 })

@@ -1,8 +1,9 @@
 import { sendop } from '@/core'
 import { ECDSAValidator } from '@/validators/ecdsa_validator'
 import { hexlify, JsonRpcProvider, randomBytes, Wallet } from 'ethers'
-import { CHARITY_PAYMASTER, ECDSA_VALIDATOR, OpBuilder, MyPaymaster, PimlicoBundler, setup } from './utils'
+import { CHARITY_PAYMASTER, ECDSA_VALIDATOR, MyPaymaster, PimlicoBundler, setup } from './utils'
 import { Kernel } from '@/index'
+import { OpBuilder } from '@/OpBuilder'
 
 const { logger, chainId, CLIENT_URL, BUNDLER_URL, PRIVATE_KEY, SALT } = setup()
 

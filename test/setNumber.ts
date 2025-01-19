@@ -2,7 +2,8 @@ import { sendop } from '@/core'
 import { ECDSAValidator } from '@/validators/ecdsa_validator'
 import { MyAccount } from '@/vendors/my_account'
 import { Interface, JsonRpcProvider, toNumber, Wallet } from 'ethers'
-import { COUNTER, ECDSA_VALIDATOR, setup, OpBuilder, PimlicoBundler, MyPaymaster, CHARITY_PAYMASTER } from './utils'
+import { COUNTER, ECDSA_VALIDATOR, setup, PimlicoBundler, MyPaymaster, CHARITY_PAYMASTER } from './utils'
+import { OpBuilder } from '@/OpBuilder'
 
 const { logger, chainId, CLIENT_URL, BUNDLER_URL, PRIVATE_KEY } = setup()
 logger.info(`Chain ID: ${chainId}`)

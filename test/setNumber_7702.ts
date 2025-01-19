@@ -2,8 +2,8 @@ import { sendop } from '@/core'
 import { ECDSAValidator } from '@/validators/ecdsa_validator'
 import { MyAccount } from '@/vendors/my_account'
 import { Interface, JsonRpcProvider, toNumber, Wallet } from 'ethers'
-import { CHARITY_PAYMASTER, COUNTER, ECDSA_VALIDATOR, PimlicoBundler, MyPaymaster, setup, OpBuilder } from './utils'
-
+import { CHARITY_PAYMASTER, COUNTER, ECDSA_VALIDATOR, PimlicoBundler, MyPaymaster, setup } from './utils'
+import { OpBuilder } from '@/OpBuilder'
 // error: AccountAccessUnauthorized()
 
 const { logger, chainId, CLIENT_URL, BUNDLER_URL, PRIVATE_KEY } = setup()

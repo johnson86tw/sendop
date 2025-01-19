@@ -2,7 +2,8 @@ import { sendop } from '@/core'
 import { ECDSAValidator } from '@/validators/ecdsa_validator'
 import { MyAccount } from '@/vendors/my_account'
 import { Interface, JsonRpcProvider, toNumber, Wallet } from 'ethers'
-import { COUNTER, ECDSA_VALIDATOR, PimlicoBundler, PimlicoPaymaster, setup, OpBuilder } from './utils'
+import { COUNTER, ECDSA_VALIDATOR, PimlicoBundler, PimlicoPaymaster, setup } from './utils'
+import { OpBuilder } from '@/OpBuilder'
 
 // only works for sepolia
 
