@@ -17,11 +17,21 @@ export interface Bundler {
 	getUserOperationReceipt(hash: string): Promise<UserOpReceipt>
 }
 
-export interface OperationGetter {
+export interface OperationGetter extends AccountGetter, SignatureGetter {}
+
+export interface AccountGetter {
+	getSender(): Promise<string> | string
 	getNonce(): Promise<string> | string
 	getCallData(executions: Execution[]): Promise<string> | string
+}
+
+export interface SignatureGetter {
 	getDummySignature(): Promise<string> | string
 	getSignature(userOpHash: string): Promise<string> | string
+}
+
+export interface ERC7579Validator extends SignatureGetter {
+	address(): string
 }
 
 /**

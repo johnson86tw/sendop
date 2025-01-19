@@ -1,5 +1,4 @@
-import { type Bundler, type PaymasterGetter } from '@/core'
-import type { Validator } from '@/types'
+import { type Bundler, type ERC7579Validator, type PaymasterGetter } from '@/core'
 import { ECDSAValidator } from '@/validators/ecdsa_validator'
 import { hexlify, Interface, JsonRpcProvider, randomBytes, toNumber, Wallet } from 'ethers'
 import { CHARITY_PAYMASTER, COUNTER, ECDSA_VALIDATOR, MyPaymaster, PimlicoBundler, setup } from 'test/utils'
@@ -16,7 +15,7 @@ describe('Kernel', () => {
 	let signer: Wallet
 	let client: JsonRpcProvider
 	let bundler: Bundler
-	let validator: Validator
+	let erc7579Validator: ERC7579Validator
 	let pmGetter: PaymasterGetter
 	let kernel: Kernel
 	const KERNEL_ADDRESS = '0x41f88637a749c815a31fe2867fbdf59af7b2fceb'
@@ -25,7 +24,7 @@ describe('Kernel', () => {
 		signer = new Wallet(PRIVATE_KEY)
 		client = new JsonRpcProvider(CLIENT_URL)
 		bundler = new PimlicoBundler(chainId, BUNDLER_URL)
-		validator = new ECDSAValidator({
+		erc7579Validator = new ECDSAValidator({
 			address: ECDSA_VALIDATOR,
 			clientUrl: CLIENT_URL,
 			signer: new Wallet(PRIVATE_KEY),
@@ -36,7 +35,12 @@ describe('Kernel', () => {
 			paymasterAddress: CHARITY_PAYMASTER,
 		})
 
-		kernel = new Kernel({ client, bundler, validator, pmGetter })
+		kernel = new Kernel(KERNEL_ADDRESS, {
+			client,
+			bundler,
+			erc7579Validator,
+			pmGetter,
+		})
 		logger.info(`Signer: ${signer.address}`)
 	})
 
@@ -94,7 +98,7 @@ describe('Kernel', () => {
 			const owner = '0xd78B5013757Ea4A7841811eF770711e6248dC282'
 			const salt = hexlify(randomBytes(32))
 
-			const address = await Kernel.getNewAddress(client, { salt, validatorAddress, owner })
+			const address = await kernel.getNewAddress({ salt, validatorAddress, owner })
 			expect(address).not.toBe('0x0000000000000000000000000000000000000000')
 		})
 	})
@@ -107,17 +111,19 @@ describe('Kernel', () => {
 				owner: signer.address,
 			}
 
-			const kernel = new Kernel({
+			const deployedAddress = await Kernel.getNewAddress(client, creationOptions)
+
+			const kernel = new Kernel(deployedAddress, {
 				client,
 				bundler,
-				validator,
+				erc7579Validator,
 				pmGetter,
-				creationOptions,
 			})
-			const deployedAddress = await Kernel.getNewAddress(client, creationOptions)
-			const op = await kernel.deploy()
+
+			const op = await kernel.deploy(creationOptions)
 			logger.info(`hash: ${op.hash}`)
 			await op.wait()
+			logger.info('deployed address: ', deployedAddress)
 
 			const code = await client.getCode(deployedAddress)
 			expect(code).not.toBe('0x')
@@ -125,7 +131,7 @@ describe('Kernel', () => {
 
 		it('should setNumber', async () => {
 			const number = 100
-			const op = await kernel.send(KERNEL_ADDRESS, [
+			const op = await kernel.send([
 				{
 					to: COUNTER,
 					data: new Interface(['function setNumber(uint256)']).encodeFunctionData('setNumber', [number]),

@@ -1,5 +1,13 @@
-import { type Execution } from '@/core'
-import { abiEncode, padLeft } from '@/utils/ethers'
+import {
+	sendop,
+	type Bundler,
+	type ERC7579Validator,
+	type Execution,
+	type PaymasterGetter,
+	type SendOpResult,
+} from '@/core'
+import type { SmartAccount } from '@/types'
+import { abiEncode, getEntryPointContract, padLeft } from '@/utils/ethers'
 import {
 	concat,
 	Contract,
@@ -11,57 +19,89 @@ import {
 	zeroPadValue,
 	type BytesLike,
 } from 'ethers'
-import type { AccountCreatingVendor } from '../types'
 
 const MY_ACCOUNT_FACTORY_ADDRESS = '0xd4650238fcc60f64DfCa4e095dEe0081Dd4734b0'
 
-export class MyAccount implements AccountCreatingVendor {
+type MyAccountCreationOptions = {
+	salt: BytesLike
+	validatorAddress: string
+	owner: string
+}
+
+export class MyAccount implements SmartAccount {
 	static readonly accountId = 'johnson86tw.0.0.1'
-	#client?: JsonRpcProvider
-	#creationOptions?: {
-		salt: BytesLike
-		validatorAddress: string
-		owner: string
-	}
+
+	address: string
+	client: JsonRpcProvider
+	bundler: Bundler
+	erc7579Validator: ERC7579Validator
+
+	pmGetter?: PaymasterGetter
 
 	constructor(
-		clientUrl?: string,
-		creationOptions?: {
-			salt: BytesLike
-			validatorAddress: string
-			owner: string
+		address: string,
+		options: {
+			client: JsonRpcProvider
+			bundler: Bundler
+			erc7579Validator: ERC7579Validator
+			pmGetter?: PaymasterGetter
 		},
 	) {
-		if (clientUrl) {
-			this.#client = new JsonRpcProvider(clientUrl)
-		}
-		if (creationOptions) {
-			this.#creationOptions = creationOptions
-		}
+		this.address = address
+		this.client = options.client
+		this.bundler = options.bundler
+		this.erc7579Validator = options.erc7579Validator
+		this.pmGetter = options.pmGetter
 	}
 
-	accountId() {
-		return MyAccount.accountId
+	getSender() {
+		return this.address
+	}
+
+	async getDummySignature() {
+		return this.erc7579Validator.getDummySignature()
+	}
+
+	async getSignature(hash: string) {
+		return this.erc7579Validator.getSignature(hash)
+	}
+
+	async getNonce() {
+		const nonceKey = await this.getNonceKey(await this.erc7579Validator.address())
+		const nonce: bigint = await getEntryPointContract(this.client).getNonce(this.address, nonceKey)
+		return toBeHex(nonce)
 	}
 
 	async getNonceKey(validator: string) {
 		return padLeft(validator, 24)
 	}
 
-	async getAddress(): Promise<string> {
-		if (!this.#client) {
-			throw new Error('Client is not set')
-		}
+	async send(executions: Execution[], pmGetter?: PaymasterGetter): Promise<SendOpResult> {
+		return await sendop({
+			bundler: this.bundler,
+			executions,
+			opGetter: this,
+			pmGetter: pmGetter ?? this.pmGetter,
+		})
+	}
 
-		if (!this.#creationOptions) {
-			throw new Error('Creation options are not set')
-		}
+	async deploy(creationOptions: MyAccountCreationOptions, pmGetter?: PaymasterGetter): Promise<SendOpResult> {
+		return await sendop({
+			bundler: this.bundler,
+			executions: [],
+			opGetter: this,
+			pmGetter: pmGetter ?? this.pmGetter,
+			initCode: MyAccount.getInitCode(creationOptions),
+		})
+	}
 
-		const { salt, validatorAddress, owner } = this.#creationOptions
+	static async getNewAddress(client: JsonRpcProvider, options: MyAccountCreationOptions) {
+		const { salt, validatorAddress, owner } = options
+
 		const myAccountFactory = new Contract(
 			MY_ACCOUNT_FACTORY_ADDRESS,
 			['function getAddress(uint256 salt, address validator, bytes calldata data) public view returns (address)'],
-			this.#client,
+			client,
 		)
 		const address = await myAccountFactory['getAddress(uint256,address,bytes)'](salt, validatorAddress, owner)
 
@@ -72,12 +112,9 @@ export class MyAccount implements AccountCreatingVendor {
 		return address
 	}
 
-	getInitCode() {
-		if (!this.#creationOptions) {
-			throw new Error('Creation options are not set')
-		}
+	static getInitCode(options: MyAccountCreationOptions) {
+		const { salt, validatorAddress, owner } = options
 
-		const { salt, validatorAddress, owner } = this.#creationOptions
 		return concat([
 			MY_ACCOUNT_FACTORY_ADDRESS,
 			new Interface([
@@ -86,7 +123,7 @@ export class MyAccount implements AccountCreatingVendor {
 		])
 	}
 
-	async getCallData(from: string, executions: Execution[]) {
+	async getCallData(executions: Execution[]) {
 		if (!executions.length) {
 			return '0x'
 		}
@@ -94,7 +131,7 @@ export class MyAccount implements AccountCreatingVendor {
 		let callData
 
 		// if one of the execution is to SA itself, it must be a single execution
-		if (executions.some(execution => execution.to === from)) {
+		if (executions.some(execution => execution.to === this.address)) {
 			if (executions.length > 1) {
 				throw new Error('If one of the execution is to SA itself, it must be a single execution')
 			}

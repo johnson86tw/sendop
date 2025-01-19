@@ -1,10 +1,10 @@
-import type { Validator } from '../types'
+import type { ERC7579Validator } from '../core/types'
 
 type ConstructorOptions = {
 	address: string
 }
 
-export class WebAuthnValidator implements Validator {
+export class WebAuthnValidator implements ERC7579Validator {
 	#address: string
 
 	constructor(options: ConstructorOptions) {

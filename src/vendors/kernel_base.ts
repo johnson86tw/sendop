@@ -1,10 +1,9 @@
-import type { Execution } from '@/core'
+import type { AccountGetter, Execution } from '@/core'
 import { abiEncode, padLeft } from '@/utils/ethers'
 import type { BytesLike } from 'ethers'
 import { concat, hexlify, Interface, toBeHex, ZeroAddress } from 'ethers'
-import type { Vendor } from '../types'
 
-export class KernelBase implements Vendor {
+export class KernelBase {
 	static readonly accountId = 'kernel.advanced.v0.3.1'
 
 	static readonly kernelInterface = new Interface([
@@ -38,7 +37,7 @@ export class KernelBase implements Vendor {
 		return concat(['0x00', '0x00', validator, '0x0000'])
 	}
 
-	async getCallData(from: string, executions: Execution[]) {
+	async getCallData(executions: Execution[]) {
 		const execMode = '0x0100000000000000000000000000000000000000000000000000000000000000'
 
 		const executionsData = executions.map(execution => ({

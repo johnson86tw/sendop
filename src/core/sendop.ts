@@ -14,17 +14,16 @@ export const ENTRY_POINT_V07 = '0x0000000071727De22E5E9d8BAf0edAc6f37da032'
 
 export async function sendop(options: {
 	bundler: Bundler
-	from: string
 	executions: Execution[]
 	opGetter: OperationGetter
 	pmGetter?: PaymasterGetter
 	initCode?: string // userOp.factory ++ userOp.factoryData
 }): Promise<SendOpResult> {
-	const { bundler, from, executions, opGetter, pmGetter, initCode } = options
+	const { bundler, executions, opGetter, pmGetter, initCode } = options
 
 	// build userOp
 	const userOp = getEmptyUserOp()
-	userOp.sender = from
+	userOp.sender = await opGetter.getSender()
 
 	if (initCode) {
 		if (initCode && initCode !== '0x') {

@@ -1,8 +1,7 @@
-import type { Bundler, Execution, PaymasterGetter, SendOpResult } from '@/core'
-import type { ERC4337Account, Validator } from '@/types'
-import { is32BytesHexString } from '@/utils/ethers'
-import { concat, Contract, isAddress, JsonRpcProvider, ZeroAddress } from 'ethers'
-import { OpGetter, sendop } from '@/index'
+import type { Bundler, ERC7579Validator, Execution, PaymasterGetter, SendOpResult } from '@/core'
+import { sendop, type SmartAccount } from '@/index'
+import { is32BytesHexString, getEntryPointContract } from '@/utils/ethers'
+import { concat, Contract, isAddress, JsonRpcProvider, toBeHex, ZeroAddress } from 'ethers'
 import { KernelBase } from './kernel_base'
 
 const KERNEL_FACTORY_ADDRESS = '0xaac5D4240AF87249B3f71BC8E4A2cae074A3E419'
@@ -13,60 +12,65 @@ export type KernelCreationOptions = {
 	owner: string
 }
 
-export class Kernel extends KernelBase implements ERC4337Account {
+export class Kernel extends KernelBase implements SmartAccount {
+	address: string
 	client: JsonRpcProvider
 	bundler: Bundler
-	validator: Validator
+	erc7579Validator: ERC7579Validator
 
 	pmGetter?: PaymasterGetter
-	creationOptions?: KernelCreationOptions
 
-	constructor(options: {
-		client: JsonRpcProvider
-		bundler: Bundler
-		validator: Validator
-		pmGetter?: PaymasterGetter
-		creationOptions?: KernelCreationOptions
-	}) {
+	constructor(
+		address: string,
+		options: {
+			client: JsonRpcProvider
+			bundler: Bundler
+			erc7579Validator: ERC7579Validator
+			pmGetter?: PaymasterGetter
+		},
+	) {
 		super()
-
+		this.address = address
 		this.client = options.client
 		this.bundler = options.bundler
-		this.validator = options.validator
-
+		this.erc7579Validator = options.erc7579Validator
 		this.pmGetter = options.pmGetter
-		this.creationOptions = options.creationOptions
 	}
 
-	async send(address: string, executions: Execution[], pmGetter?: PaymasterGetter): Promise<SendOpResult> {
+	async getSender() {
+		return this.address
+	}
+
+	async getDummySignature() {
+		return this.erc7579Validator.getDummySignature()
+	}
+
+	async getSignature(hash: string) {
+		return this.erc7579Validator.getSignature(hash)
+	}
+
+	async getNonce() {
+		const nonceKey = await this.getNonceKey(await this.erc7579Validator.address())
+		const nonce: bigint = await getEntryPointContract(this.client).getNonce(this.address, nonceKey)
+		return toBeHex(nonce)
+	}
+
+	async send(executions: Execution[], pmGetter?: PaymasterGetter): Promise<SendOpResult> {
 		return await sendop({
 			bundler: this.bundler,
-			from: address,
 			executions,
-			opGetter: new OpGetter({
-				client: this.client,
-				vendor: this,
-				validator: this.validator,
-				from: address,
-			}),
+			opGetter: this,
 			pmGetter: pmGetter ?? this.pmGetter,
 		})
 	}
 
-	async deploy(pmGetter?: PaymasterGetter): Promise<SendOpResult> {
-		const deployedAddress = await this.getAddress()
+	async deploy(creationOptions: KernelCreationOptions, pmGetter?: PaymasterGetter): Promise<SendOpResult> {
 		return await sendop({
 			bundler: this.bundler,
-			from: deployedAddress,
 			executions: [],
-			opGetter: new OpGetter({
-				client: this.client,
-				vendor: this,
-				validator: this.validator,
-				from: deployedAddress,
-			}),
+			opGetter: this,
 			pmGetter: pmGetter ?? this.pmGetter,
-			initCode: this.getInitCode(),
+			initCode: this.getInitCode(creationOptions),
 		})
 	}
 
@@ -105,40 +109,12 @@ export class Kernel extends KernelBase implements ERC4337Account {
 		return address
 	}
 
-	// if optinos is provided, it will use the options instead of the creationOptions in the constructor
-	async getAddress(): Promise<string> {
-		if (!this.client) {
-			throw new Error('Client is not set')
-		}
-
-		if (!this.creationOptions) {
-			throw new Error('Creation options are not set')
-		}
-		const { salt, validatorAddress, owner } = this.creationOptions
-
-		if (!is32BytesHexString(salt)) {
-			throw new Error('Salt should be 32 bytes')
-		}
-
-		const kernelFactory = new Contract(KERNEL_FACTORY_ADDRESS, this.kernelFactoryInterface(), this.client)
-		const address = await kernelFactory['getAddress(bytes,bytes32)'](
-			this.getInitializeData(validatorAddress, owner),
-			salt,
-		)
-
-		if (!isAddress(address)) {
-			throw new Error('Failed to get new address')
-		}
-
-		return address
+	getNewAddress(options: KernelCreationOptions) {
+		return Kernel.getNewAddress(this.client, options)
 	}
 
-	getInitCode() {
-		if (!this.creationOptions) {
-			throw new Error('Creation options are not set')
-		}
-
-		const { salt, validatorAddress, owner } = this.creationOptions
+	getInitCode(creationOptions: KernelCreationOptions) {
+		const { salt, validatorAddress, owner } = creationOptions
 		return concat([KERNEL_FACTORY_ADDRESS, this.getCreateAccountData(validatorAddress, owner, salt)])
 	}
 
