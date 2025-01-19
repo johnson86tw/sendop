@@ -17,7 +17,6 @@ export type KernelCreationOptions = {
 export class Kernel extends KernelBase {
 	client: JsonRpcProvider
 	bundler: Bundler
-	address: string
 	validator: Validator
 
 	pmBuilder?: PaymasterBuilder
@@ -26,7 +25,6 @@ export class Kernel extends KernelBase {
 	constructor(options: {
 		client: JsonRpcProvider
 		bundler: Bundler
-		address: string
 		validator: Validator
 		pmBuilder?: PaymasterBuilder
 		creationOptions?: KernelCreationOptions
@@ -35,23 +33,22 @@ export class Kernel extends KernelBase {
 
 		this.client = options.client
 		this.bundler = options.bundler
-		this.address = options.address
 		this.validator = options.validator
 
 		this.pmBuilder = options.pmBuilder
 		this.creationOptions = options.creationOptions
 	}
 
-	async send(executions: Execution[], pmBuilder?: PaymasterBuilder) {
+	async send(address: string, executions: Execution[], pmBuilder?: PaymasterBuilder) {
 		return await sendop({
 			bundler: this.bundler,
-			from: this.address,
+			from: address,
 			executions,
 			opBuilder: new OpBuilder({
 				client: this.client,
 				vendor: this,
 				validator: this.validator,
-				from: this.address,
+				from: address,
 			}),
 			pmBuilder: pmBuilder ?? this.pmBuilder,
 		})

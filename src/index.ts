@@ -9,3 +9,5 @@ export * from '@/validators/webauthn_validator'
 
 export * from '@/vendors/my_account'
 export * from '@/vendors/kernel'
+
+export * from '@/OpBuilder'

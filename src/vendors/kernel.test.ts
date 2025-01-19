@@ -36,8 +36,7 @@ describe('Kernel', () => {
 			paymasterAddress: CHARITY_PAYMASTER,
 		})
 
-		kernel = new Kernel({ client, bundler, address: KERNEL_ADDRESS, validator, pmBuilder })
-		logger.info(`Kernel: ${kernel.address}`)
+		kernel = new Kernel({ client, bundler, validator, pmBuilder })
 		logger.info(`Signer: ${signer.address}`)
 	})
 
@@ -111,7 +110,6 @@ describe('Kernel', () => {
 			const kernel = new Kernel({
 				client,
 				bundler,
-				address: KERNEL_ADDRESS,
 				validator,
 				pmBuilder,
 				creationOptions,
@@ -127,7 +125,7 @@ describe('Kernel', () => {
 
 		it('should setNumber', async () => {
 			const number = 100
-			const op = await kernel.send([
+			const op = await kernel.send(KERNEL_ADDRESS, [
 				{
 					to: COUNTER,
 					data: new Interface(['function setNumber(uint256)']).encodeFunctionData('setNumber', [number]),
