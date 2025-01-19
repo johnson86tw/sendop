@@ -17,8 +17,7 @@ export interface Bundler {
 	getUserOperationReceipt(hash: string): Promise<UserOpReceipt>
 }
 
-export interface OperationBuilder {
-	getInitCode?(): Promise<string> | string
+export interface OperationGetter {
 	getNonce(): Promise<string> | string
 	getCallData(executions: Execution[]): Promise<string> | string
 	getDummySignature(): Promise<string> | string

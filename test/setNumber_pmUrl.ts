@@ -3,7 +3,7 @@ import { ECDSAValidator } from '@/validators/ecdsa_validator'
 import { MyAccount } from '@/vendors/my_account'
 import { Interface, JsonRpcProvider, toNumber, Wallet } from 'ethers'
 import { COUNTER, ECDSA_VALIDATOR, PimlicoBundler, PimlicoPaymaster, setup } from './utils'
-import { OpBuilder } from '@/OpBuilder'
+import { OpGetter } from '@/OpGetter'
 
 // only works for sepolia
 
@@ -26,7 +26,7 @@ const op = await sendop({
 			value: '0x0',
 		},
 	],
-	opBuilder: new OpBuilder({
+	opGetter: new OpGetter({
 		client: new JsonRpcProvider(CLIENT_URL),
 		vendor: new MyAccount(),
 		validator: new ECDSAValidator({

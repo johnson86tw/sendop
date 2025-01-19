@@ -3,7 +3,7 @@ import { ECDSAValidator } from '@/validators/ecdsa_validator'
 import { MyAccount } from '@/vendors/my_account'
 import { hexlify, JsonRpcProvider, randomBytes, Wallet } from 'ethers'
 import { CHARITY_PAYMASTER, ECDSA_VALIDATOR, MyPaymaster, PimlicoBundler, setup } from './utils'
-import { OpBuilder } from '@/OpBuilder'
+import { OpGetter } from '@/OpGetter'
 const { logger, chainId, CLIENT_URL, BUNDLER_URL, PRIVATE_KEY, SALT } = setup()
 
 const creationOptions = {
@@ -27,7 +27,7 @@ const op = await sendop({
 	bundler: new PimlicoBundler(chainId, BUNDLER_URL),
 	from: FROM,
 	executions: [],
-	opBuilder: new OpBuilder({
+	opGetter: new OpGetter({
 		client: new JsonRpcProvider(CLIENT_URL),
 		vendor,
 		validator: new ECDSAValidator({
@@ -36,13 +36,13 @@ const op = await sendop({
 			signer: new Wallet(PRIVATE_KEY),
 		}),
 		from: FROM,
-		isCreation: true,
 	}),
 	pmBuilder: new MyPaymaster({
 		chainId,
 		clientUrl: CLIENT_URL,
 		paymasterAddress: CHARITY_PAYMASTER,
 	}),
+	initCode: vendor.getInitCode(),
 })
 
 logger.info('Waiting for receipt...')

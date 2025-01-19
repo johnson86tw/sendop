@@ -12,7 +12,7 @@ import { beforeAll, describe, expect, it } from 'vitest'
 import { ECDSAValidator } from '../validators/ecdsa_validator'
 import { MyAccount } from '../vendors/my_account'
 import { sendop } from './sendop'
-import { OpBuilder } from '@/OpBuilder'
+import { OpGetter } from '@/OpGetter'
 const { logger, chainId, CLIENT_URL, BUNDLER_URL, PRIVATE_KEY } = setup({
 	chainId: '11155111',
 })
@@ -45,7 +45,7 @@ describe('sendop', () => {
 					value: '0x0',
 				},
 			],
-			opBuilder: new OpBuilder({
+			opGetter: new OpGetter({
 				client: new JsonRpcProvider(CLIENT_URL),
 				vendor: new MyAccount(),
 				validator: new ECDSAValidator({
@@ -85,7 +85,7 @@ describe('sendop', () => {
 					value: '0x0',
 				},
 			],
-			opBuilder: new OpBuilder({
+			opGetter: new OpGetter({
 				client: new JsonRpcProvider(CLIENT_URL),
 				vendor: new MyAccount(),
 				validator: new ECDSAValidator({
@@ -121,7 +121,7 @@ describe('sendop', () => {
 			bundler: new PimlicoBundler(chainId, BUNDLER_URL),
 			from: FROM,
 			executions: [],
-			opBuilder: new OpBuilder({
+			opGetter: new OpGetter({
 				client: new JsonRpcProvider(CLIENT_URL),
 				vendor,
 				validator: new ECDSAValidator({
@@ -130,13 +130,13 @@ describe('sendop', () => {
 					signer: new Wallet(PRIVATE_KEY),
 				}),
 				from: FROM,
-				isCreation: true,
 			}),
 			pmBuilder: new MyPaymaster({
 				chainId,
 				clientUrl: CLIENT_URL,
 				paymasterAddress: CHARITY_PAYMASTER,
 			}),
+			initCode: vendor.getInitCode(),
 		})
 		await op.wait()
 		const code = await client.getCode(deployedAddress)
@@ -164,7 +164,7 @@ describe('sendop', () => {
 					value: '0x0',
 				},
 			],
-			opBuilder: new OpBuilder({
+			opGetter: new OpGetter({
 				client: new JsonRpcProvider(CLIENT_URL),
 				vendor,
 				validator: new ECDSAValidator({
@@ -173,13 +173,13 @@ describe('sendop', () => {
 					signer: new Wallet(PRIVATE_KEY),
 				}),
 				from: FROM,
-				isCreation: true,
 			}),
 			pmBuilder: new MyPaymaster({
 				chainId,
 				clientUrl: CLIENT_URL,
 				paymasterAddress: CHARITY_PAYMASTER,
 			}),
+			initCode: vendor.getInitCode(),
 		})
 		const receipt = await op.wait()
 		const code = await client.getCode(deployedAddress)

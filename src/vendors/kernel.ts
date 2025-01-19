@@ -1,9 +1,8 @@
 import type { Bundler, Execution, PaymasterBuilder, SendOpResult } from '@/core'
-import { sendop } from '@/core'
 import type { ERC4337Account, Validator } from '@/types'
 import { is32BytesHexString } from '@/utils/ethers'
 import { concat, Contract, isAddress, JsonRpcProvider, ZeroAddress } from 'ethers'
-import { OpBuilder } from '@/OpBuilder'
+import { OpGetter, sendop } from '@/index'
 import { KernelBase } from './kernel_base'
 
 const KERNEL_FACTORY_ADDRESS = '0xaac5D4240AF87249B3f71BC8E4A2cae074A3E419'
@@ -44,7 +43,7 @@ export class Kernel extends KernelBase implements ERC4337Account {
 			bundler: this.bundler,
 			from: address,
 			executions,
-			opBuilder: new OpBuilder({
+			opGetter: new OpGetter({
 				client: this.client,
 				vendor: this,
 				validator: this.validator,
@@ -60,14 +59,14 @@ export class Kernel extends KernelBase implements ERC4337Account {
 			bundler: this.bundler,
 			from: deployedAddress,
 			executions: [],
-			opBuilder: new OpBuilder({
+			opGetter: new OpGetter({
 				client: this.client,
 				vendor: this,
 				validator: this.validator,
 				from: deployedAddress,
-				isCreation: true,
 			}),
 			pmBuilder: pmBuilder ?? this.pmBuilder,
+			initCode: this.getInitCode(),
 		})
 	}
 

@@ -2,7 +2,7 @@ import { AbiCoder, concat, keccak256, toBeHex, zeroPadValue } from 'ethers'
 import type {
 	Bundler,
 	Execution,
-	OperationBuilder,
+	OperationGetter,
 	PackedUserOp,
 	PaymasterBuilder,
 	SendOpResult,
@@ -16,27 +16,28 @@ export async function sendop(options: {
 	bundler: Bundler
 	from: string
 	executions: Execution[]
-	opBuilder: OperationBuilder
+	opGetter: OperationGetter
 	pmBuilder?: PaymasterBuilder
+	initCode?: string // userOp.factory ++ userOp.factoryData
 }): Promise<SendOpResult> {
-	const { bundler, from, executions, opBuilder, pmBuilder } = options
+	const { bundler, from, executions, opGetter, pmBuilder, initCode } = options
 
 	// build userOp
 	const userOp = getEmptyUserOp()
 	userOp.sender = from
 
-	if (opBuilder.getInitCode) {
-		const initCode = await opBuilder.getInitCode()
+	if (initCode) {
 		if (initCode && initCode !== '0x') {
+			// TODO: check if initCode is valid
 			const initCodeWithoutPrefix = initCode.slice(2) // remove 0x prefix
 			userOp.factory = '0x' + initCodeWithoutPrefix.slice(0, 40)
 			userOp.factoryData = '0x' + initCodeWithoutPrefix.slice(40)
 		}
 	}
 
-	userOp.nonce = await opBuilder.getNonce()
-	userOp.callData = await opBuilder.getCallData(executions)
-	userOp.signature = await opBuilder.getDummySignature()
+	userOp.nonce = await opGetter.getNonce()
+	userOp.callData = await opGetter.getCallData(executions)
+	userOp.signature = await opGetter.getDummySignature()
 
 	// if pm, get pmStubData
 	let isFinal = false
@@ -70,7 +71,7 @@ export async function sendop(options: {
 
 	// sign userOp
 	const userOpHash = getUserOpHash(packUserOp(userOp), ENTRY_POINT_V07, bundler.chainId)
-	userOp.signature = await opBuilder.getSignature(userOpHash)
+	userOp.signature = await opGetter.getSignature(userOpHash)
 
 	// send userOp
 	await bundler.sendUserOperation(userOp)

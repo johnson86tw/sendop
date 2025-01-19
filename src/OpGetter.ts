@@ -1,34 +1,24 @@
-import type { Execution, OperationBuilder } from '@/core'
+import type { Execution, OperationGetter } from '@/core'
 import type { AccountCreatingVendor, ERC7579Vendor, Validator, Vendor } from '@/types'
 import { getEntryPointContract } from '@/utils/ethers'
 import { JsonRpcProvider, toBeHex } from 'ethers'
 
-export class OpBuilder implements OperationBuilder {
+export class OpGetter implements OperationGetter {
 	#client: JsonRpcProvider
 	#vendor: Vendor | ERC7579Vendor | AccountCreatingVendor
 	#validator: Validator
 	#from: string
-	#isCreation: boolean
 
 	constructor(options: {
 		client: JsonRpcProvider
 		vendor: Vendor | ERC7579Vendor | AccountCreatingVendor
 		validator: Validator
 		from: string
-		isCreation?: boolean
 	}) {
 		this.#client = options.client
 		this.#vendor = options.vendor
 		this.#validator = options.validator
 		this.#from = options.from
-		this.#isCreation = options.isCreation ?? false
-	}
-
-	async getInitCode() {
-		if (this.#isCreation && 'getInitCode' in this.#vendor) {
-			return await this.#vendor.getInitCode()
-		}
-		return '0x'
 	}
 
 	async getNonce() {
