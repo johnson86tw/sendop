@@ -6,7 +6,7 @@ import {
 	type PaymasterGetter,
 	type SendOpResult,
 } from '@/core'
-import type { SmartAccount } from '@/types'
+import { SmartAccount } from '@/types'
 import { abiEncode, getEntryPointContract, padLeft } from '@/utils/ethers'
 import {
 	concat,
@@ -28,15 +28,33 @@ type MyAccountCreationOptions = {
 	owner: string
 }
 
-export class MyAccount implements SmartAccount {
-	static readonly accountId = 'johnson86tw.0.0.1'
+export class MyAccount extends SmartAccount {
+	static override accountId() {
+		return 'johnson86tw.0.0.1'
+	}
 
-	address: string
-	client: JsonRpcProvider
-	bundler: Bundler
-	erc7579Validator: ERC7579Validator
+	static override async getNewAddress(client: JsonRpcProvider, options: MyAccountCreationOptions) {
+		const { salt, validatorAddress, owner } = options
 
-	pmGetter?: PaymasterGetter
+		const myAccountFactory = new Contract(
+			MY_ACCOUNT_FACTORY_ADDRESS,
+			['function getAddress(uint256 salt, address validator, bytes calldata data) public view returns (address)'],
+			client,
+		)
+		const address = await myAccountFactory['getAddress(uint256,address,bytes)'](salt, validatorAddress, owner)
+
+		if (!isAddress(address)) {
+			throw new Error('Failed to get new address')
+		}
+
+		return address
+	}
+
+	readonly address: string
+	readonly client: JsonRpcProvider
+	readonly bundler: Bundler
+	readonly erc7579Validator: ERC7579Validator
+	readonly pmGetter?: PaymasterGetter
 
 	constructor(
 		address: string,
@@ -47,6 +65,7 @@ export class MyAccount implements SmartAccount {
 			pmGetter?: PaymasterGetter
 		},
 	) {
+		super()
 		this.address = address
 		this.client = options.client
 		this.bundler = options.bundler
@@ -54,7 +73,7 @@ export class MyAccount implements SmartAccount {
 		this.pmGetter = options.pmGetter
 	}
 
-	getSender() {
+	async getSender() {
 		return this.address
 	}
 
@@ -95,25 +114,8 @@ export class MyAccount implements SmartAccount {
 		})
 	}
 
-	static async getNewAddress(client: JsonRpcProvider, options: MyAccountCreationOptions) {
-		const { salt, validatorAddress, owner } = options
-
-		const myAccountFactory = new Contract(
-			MY_ACCOUNT_FACTORY_ADDRESS,
-			['function getAddress(uint256 salt, address validator, bytes calldata data) public view returns (address)'],
-			client,
-		)
-		const address = await myAccountFactory['getAddress(uint256,address,bytes)'](salt, validatorAddress, owner)
-
-		if (!isAddress(address)) {
-			throw new Error('Failed to get new address')
-		}
-
-		return address
-	}
-
-	static getInitCode(options: MyAccountCreationOptions) {
-		const { salt, validatorAddress, owner } = options
+	static getInitCode(creationOptions: MyAccountCreationOptions) {
+		const { salt, validatorAddress, owner } = creationOptions
 
 		return concat([
 			MY_ACCOUNT_FACTORY_ADDRESS,
@@ -121,6 +123,10 @@ export class MyAccount implements SmartAccount {
 				'function createAccount(uint256 salt, address validator, bytes calldata data)',
 			]).encodeFunctionData('createAccount', [salt, validatorAddress, owner]),
 		])
+	}
+
+	getInitCode(creationOptions: MyAccountCreationOptions) {
+		return MyAccount.getInitCode(creationOptions)
 	}
 
 	async getCallData(executions: Execution[]) {

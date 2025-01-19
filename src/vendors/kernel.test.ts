@@ -1,6 +1,6 @@
 import { type Bundler, type ERC7579Validator, type PaymasterGetter } from '@/core'
 import { ECDSAValidator } from '@/validators/ecdsa_validator'
-import { hexlify, Interface, JsonRpcProvider, randomBytes, toNumber, Wallet } from 'ethers'
+import { hexlify, Interface, JsonRpcProvider, randomBytes, toNumber, Wallet, ZeroAddress } from 'ethers'
 import { CHARITY_PAYMASTER, COUNTER, ECDSA_VALIDATOR, MyPaymaster, PimlicoBundler, setup } from 'test/utils'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { Kernel } from './kernel'
@@ -44,6 +44,19 @@ describe('Kernel', () => {
 		logger.info(`Signer: ${signer.address}`)
 	})
 
+	describe('static methods', () => {
+		it('should get accountId', () => {
+			expect(Kernel.accountId()).toBe('kernel.advanced.v0.3.1')
+		})
+		it('should getNewAddress', async () => {
+			const newAddress = await Kernel.getNewAddress(client, {
+				salt: hexlify(randomBytes(32)),
+				validatorAddress: ECDSA_VALIDATOR,
+				owner: signer.address,
+			})
+			expect(newAddress).not.toBe(ZeroAddress)
+		})
+	})
 	describe('private getInitializeData', () => {
 		it('should return correct initialization data', async () => {
 			const validatorAddress = '0xd577C0746c19DeB788c0D698EcAf66721DC2F7A4'
@@ -98,7 +111,7 @@ describe('Kernel', () => {
 			const owner = '0xd78B5013757Ea4A7841811eF770711e6248dC282'
 			const salt = hexlify(randomBytes(32))
 
-			const address = await kernel.getNewAddress({ salt, validatorAddress, owner })
+			const address = await Kernel.getNewAddress(client, { salt, validatorAddress, owner })
 			expect(address).not.toBe('0x0000000000000000000000000000000000000000')
 		})
 	})
