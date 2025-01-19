@@ -3,8 +3,8 @@ import type {
 	Bundler,
 	Execution,
 	OperationBuilder,
-	PaymasterBuilder,
 	PackedUserOp,
+	PaymasterBuilder,
 	UserOp,
 	UserOpReceipt,
 } from './types'
