@@ -1,7 +1,8 @@
 import { type Bundler, type ERC7579Validator, type PaymasterGetter } from '@/core'
+import { MyPaymaster, PimlicoBundler } from '@/index'
 import { ECDSAValidator } from '@/validators/ecdsa_validator'
 import { hexlify, Interface, JsonRpcProvider, randomBytes, toNumber, Wallet, ZeroAddress } from 'ethers'
-import { CHARITY_PAYMASTER, COUNTER, ECDSA_VALIDATOR, MyPaymaster, PimlicoBundler, setup } from 'test/utils'
+import { CHARITY_PAYMASTER, COUNTER, ECDSA_VALIDATOR, setup } from 'test/utils'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { Kernel } from './kernel'
 
