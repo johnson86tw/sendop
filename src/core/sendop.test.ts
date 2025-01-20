@@ -32,13 +32,12 @@ describe('sendop', () => {
 		client = new JsonRpcProvider(CLIENT_URL)
 		bundler = new PimlicoBundler(chainId, BUNDLER_URL)
 		pmGetter = new MyPaymaster({
-			chainId,
-			clientUrl: CLIENT_URL,
+			client,
 			paymasterAddress: CHARITY_PAYMASTER,
 		})
 		erc7579Validator = new ECDSAValidator({
 			address: ECDSA_VALIDATOR,
-			clientUrl: CLIENT_URL,
+			client,
 			signer,
 		})
 		logger.info(`Signer: ${signer.address}`)
@@ -161,8 +160,7 @@ describe('sendop', () => {
 			],
 			opGetter: myAccount,
 			pmGetter: new MyPaymaster({
-				chainId,
-				clientUrl: CLIENT_URL,
+				client,
 				paymasterAddress: CHARITY_PAYMASTER,
 			}),
 			initCode: MyAccount.getInitCode(creationOptions),

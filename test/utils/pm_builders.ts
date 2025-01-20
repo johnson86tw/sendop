@@ -6,16 +6,12 @@ import { CHARITY_PAYMASTER } from './addresses'
 const CHARITY_PAYMASTER_ADDRESS = CHARITY_PAYMASTER
 
 export class MyPaymaster implements PaymasterGetter {
-	chainId: string
-	clientUrl: string
 	#client: JsonRpcProvider
 	#paymasterAddress: string
 	#paymaster: Contract
 
-	constructor(options: { chainId: string; clientUrl: string; paymasterAddress: string }) {
-		this.chainId = options.chainId
-		this.clientUrl = options.clientUrl
-		this.#client = new JsonRpcProvider(options.clientUrl)
+	constructor(options: { client: JsonRpcProvider; paymasterAddress: string }) {
+		this.#client = options.client
 		this.#paymasterAddress = options.paymasterAddress
 		this.#paymaster = new Contract(
 			this.#paymasterAddress,

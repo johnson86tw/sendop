@@ -3,20 +3,20 @@ import type { ERC7579Validator } from '@/core'
 
 type ConstructorOptions = {
 	address: string
-	clientUrl: string
+	client: JsonRpcProvider
 	signer: Signer
 }
 
 export class ECDSAValidator implements ERC7579Validator {
-	#address: string
-	#client: JsonRpcProvider
-	#signer: Signer
+	readonly #address: string
+	readonly #client: JsonRpcProvider
+	readonly #signer: Signer
 
 	#ecdsaValidator: Contract
 
 	constructor(options: ConstructorOptions) {
 		this.#address = options.address
-		this.#client = new JsonRpcProvider(options.clientUrl)
+		this.#client = options.client
 		this.#signer = options.signer
 
 		this.#ecdsaValidator = new Contract(

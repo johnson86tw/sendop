@@ -26,12 +26,11 @@ describe('Kernel', () => {
 		bundler = new PimlicoBundler(chainId, BUNDLER_URL)
 		erc7579Validator = new ECDSAValidator({
 			address: ECDSA_VALIDATOR,
-			clientUrl: CLIENT_URL,
+			client,
 			signer: new Wallet(PRIVATE_KEY),
 		})
 		pmGetter = new MyPaymaster({
-			chainId,
-			clientUrl: CLIENT_URL,
+			client,
 			paymasterAddress: CHARITY_PAYMASTER,
 		})
 
