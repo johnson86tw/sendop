@@ -1,9 +1,9 @@
 import { sendop } from '@/core'
+import { PimlicoBundler, PimlicoPaymaster } from '@/index'
 import { ECDSAValidator } from '@/validators/ecdsa_validator'
 import { MyAccount } from '@/vendors/my_account'
 import { Interface, JsonRpcProvider, toNumber, Wallet } from 'ethers'
-import { COUNTER, ECDSA_VALIDATOR, PimlicoBundler, PimlicoPaymaster, setup } from './utils'
-import { OpGetter } from '@/OpGetter'
+import { COUNTER, ECDSA_VALIDATOR, setup } from './utils'
 
 // only works for sepolia
 
@@ -18,7 +18,6 @@ logger.info(`Setting number to ${number}`)
 logger.info('Sending op...')
 const op = await sendop({
 	bundler: new PimlicoBundler(chainId, BUNDLER_URL),
-	from: FROM,
 	executions: [
 		{
 			to: COUNTER,
@@ -26,15 +25,14 @@ const op = await sendop({
 			value: '0x0',
 		},
 	],
-	opGetter: new OpGetter({
+	opGetter: new MyAccount(FROM, {
 		client: new JsonRpcProvider(CLIENT_URL),
-		vendor: new MyAccount(),
-		validator: new ECDSAValidator({
+		bundler: new PimlicoBundler(chainId, BUNDLER_URL),
+		erc7579Validator: new ECDSAValidator({
 			address: ECDSA_VALIDATOR,
-			clientUrl: CLIENT_URL,
+			client: new JsonRpcProvider(CLIENT_URL),
 			signer: new Wallet(PRIVATE_KEY),
 		}),
-		from: FROM,
 	}),
 	pmGetter: new PimlicoPaymaster({
 		chainId,
