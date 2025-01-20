@@ -1,4 +1,4 @@
-import type { ERC7579Validator } from '../core/types'
+import type { ERC7579Validator } from '@/core'
 
 type ConstructorOptions = {
 	address: string

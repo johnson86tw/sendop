@@ -6,7 +6,7 @@ import {
 	type PaymasterGetter,
 	type SendOpResult,
 } from '@/core'
-import { SmartAccount } from '@/types'
+import { SmartAccount } from './interface'
 import { abiEncode, getEntryPointContract, padLeft } from '@/utils/ethers'
 import {
 	concat,
