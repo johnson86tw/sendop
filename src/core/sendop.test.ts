@@ -3,7 +3,7 @@ import { hexlify, Interface, JsonRpcProvider, randomBytes, toNumber, Wallet } fr
 import { CHARITY_PAYMASTER, COUNTER, ECDSA_VALIDATOR, setup } from 'test/utils'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { ECDSAValidator } from '../validators/ecdsa_validator'
-import { MyAccount } from '../vendors/my_account'
+import { MyAccount } from '../smart_accounts/my_account'
 import { sendop } from './sendop'
 import type { Bundler, ERC7579Validator, PaymasterGetter } from './types'
 
