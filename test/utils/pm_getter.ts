@@ -1,9 +1,7 @@
 import type { GetPaymasterDataResult, GetPaymasterStubDataResult, PaymasterGetter, UserOp } from '@/core'
 import { ENTRY_POINT_V07, RpcProvider } from '@/index'
 import { Contract, JsonRpcProvider, toBeHex } from 'ethers'
-import { CHARITY_PAYMASTER } from '../test/utils/addresses'
-
-const CHARITY_PAYMASTER_ADDRESS = CHARITY_PAYMASTER
+import { CHARITY_PAYMASTER_ADDRESS } from './test_address'
 
 export class MyPaymaster implements PaymasterGetter {
 	#client: JsonRpcProvider

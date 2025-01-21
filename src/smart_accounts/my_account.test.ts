@@ -1,8 +1,8 @@
 import { type Bundler, type ERC7579Validator, type PaymasterGetter } from '@/core'
-import { MyAccount, MyPaymaster, PimlicoBundler } from '@/index'
+import { ECDSA_VALIDATOR_ADDRESS, MyAccount, PimlicoBundler } from '@/index'
 import { ECDSAValidator } from '@/validators/ecdsa_validator'
 import { JsonRpcProvider, Wallet, ZeroAddress } from 'ethers'
-import { CHARITY_PAYMASTER, ECDSA_VALIDATOR, MY_ACCOUNT_IMPLEMENTATION_ADDRESS, setup } from 'test/utils'
+import { CHARITY_PAYMASTER_ADDRESS, MyPaymaster, setup } from 'test/utils'
 import { beforeAll, describe, expect, it } from 'vitest'
 
 const { logger, chainId, CLIENT_URL, BUNDLER_URL, PRIVATE_KEY } = await setup()
@@ -22,16 +22,17 @@ describe('MyAccount', () => {
 		client = new JsonRpcProvider(CLIENT_URL)
 		bundler = new PimlicoBundler(chainId, BUNDLER_URL)
 		erc7579Validator = new ECDSAValidator({
-			address: ECDSA_VALIDATOR,
+			address: ECDSA_VALIDATOR_ADDRESS,
 			client,
 			signer: new Wallet(PRIVATE_KEY),
 		})
 		pmGetter = new MyPaymaster({
 			client,
-			paymasterAddress: CHARITY_PAYMASTER,
+			paymasterAddress: CHARITY_PAYMASTER_ADDRESS,
 		})
 
-		myAccount = new MyAccount(MY_ACCOUNT_IMPLEMENTATION_ADDRESS, {
+		// TODO:
+		myAccount = new MyAccount('', {
 			client,
 			bundler,
 			erc7579Validator,
@@ -47,7 +48,7 @@ describe('MyAccount', () => {
 		it('should getNewAddress', async () => {
 			const newAddress = await MyAccount.getNewAddress(client, {
 				salt: '0x1234567890',
-				validatorAddress: ECDSA_VALIDATOR,
+				validatorAddress: ECDSA_VALIDATOR_ADDRESS,
 				owner: signer.address,
 			})
 			expect(newAddress).not.toBe(ZeroAddress)

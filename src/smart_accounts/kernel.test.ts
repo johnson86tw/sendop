@@ -1,7 +1,7 @@
 import { type Bundler, type ERC7579Validator, type PaymasterGetter } from '@/core'
-import { ECDSAValidator, Kernel, MyPaymaster, PimlicoBundler } from '@/index'
-import { hexlify, Interface, JsonRpcProvider, randomBytes, toNumber, Wallet, ZeroAddress } from 'ethers'
-import { CHARITY_PAYMASTER, COUNTER, ECDSA_VALIDATOR, setup } from 'test/utils'
+import { ECDSA_VALIDATOR_ADDRESS, ECDSAValidator, Kernel, PimlicoBundler } from '@/index'
+import { hexlify, Interface, JsonRpcProvider, randomBytes, toNumber, Wallet } from 'ethers'
+import { CHARITY_PAYMASTER_ADDRESS, COUNTER_ADDRESS, MyPaymaster, setup } from 'test/utils'
 import { beforeAll, describe, expect, it } from 'vitest'
 
 const { logger, chainId, CLIENT_URL, BUNDLER_URL, PRIVATE_KEY } = await setup()
@@ -22,13 +22,13 @@ describe('Kernel', () => {
 		client = new JsonRpcProvider(CLIENT_URL)
 		bundler = new PimlicoBundler(chainId, BUNDLER_URL)
 		erc7579Validator = new ECDSAValidator({
-			address: ECDSA_VALIDATOR,
+			address: ECDSA_VALIDATOR_ADDRESS,
 			client,
 			signer: new Wallet(PRIVATE_KEY),
 		})
 		pmGetter = new MyPaymaster({
 			client,
-			paymasterAddress: CHARITY_PAYMASTER,
+			paymasterAddress: CHARITY_PAYMASTER_ADDRESS,
 		})
 
 		kernel = new Kernel(KERNEL_ADDRESS, {
@@ -103,7 +103,7 @@ describe('Kernel', () => {
 		it('should deploy the contract', async () => {
 			const creationOptions = {
 				salt: hexlify(randomBytes(32)),
-				validatorAddress: ECDSA_VALIDATOR,
+				validatorAddress: ECDSA_VALIDATOR_ADDRESS,
 				owner: signer.address,
 			}
 
@@ -129,7 +129,7 @@ describe('Kernel', () => {
 			const number = 100
 			const op = await kernel.send([
 				{
-					to: COUNTER,
+					to: COUNTER_ADDRESS,
 					data: new Interface(['function setNumber(uint256)']).encodeFunctionData('setNumber', [number]),
 					value: '0x0',
 				},

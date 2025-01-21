@@ -1,6 +1,6 @@
-import { ECDSAValidator, MyAccount, MyPaymaster, PimlicoBundler, PimlicoPaymaster } from '@/index'
+import { ECDSA_VALIDATOR_ADDRESS, ECDSAValidator, MyAccount, PimlicoBundler } from '@/index'
 import { hexlify, Interface, JsonRpcProvider, randomBytes, toNumber, Wallet } from 'ethers'
-import { CHARITY_PAYMASTER, COUNTER, ECDSA_VALIDATOR, setup } from 'test/utils'
+import { CHARITY_PAYMASTER_ADDRESS, COUNTER_ADDRESS, MyPaymaster, PimlicoPaymaster, setup } from 'test/utils'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { sendop } from './sendop'
 import type { Bundler, ERC7579Validator, PaymasterGetter } from './types'
@@ -22,10 +22,10 @@ describe('sendop', () => {
 		bundler = new PimlicoBundler(chainId, BUNDLER_URL)
 		pmGetter = new MyPaymaster({
 			client,
-			paymasterAddress: CHARITY_PAYMASTER,
+			paymasterAddress: CHARITY_PAYMASTER_ADDRESS,
 		})
 		erc7579Validator = new ECDSAValidator({
-			address: ECDSA_VALIDATOR,
+			address: ECDSA_VALIDATOR_ADDRESS,
 			client,
 			signer,
 		})
@@ -41,7 +41,7 @@ describe('sendop', () => {
 			bundler,
 			executions: [
 				{
-					to: COUNTER,
+					to: COUNTER_ADDRESS,
 					data: new Interface(['function setNumber(uint256)']).encodeFunctionData('setNumber', [number]),
 					value: '0x0',
 				},
@@ -70,7 +70,7 @@ describe('sendop', () => {
 			bundler,
 			executions: [
 				{
-					to: COUNTER,
+					to: COUNTER_ADDRESS,
 					data: new Interface(['function setNumber(uint256)']).encodeFunctionData('setNumber', [number]),
 					value: '0x0',
 				},
@@ -95,7 +95,7 @@ describe('sendop', () => {
 	it('should deploy MyAccount', async () => {
 		const creationOptions = {
 			salt: hexlify(randomBytes(32)),
-			validatorAddress: ECDSA_VALIDATOR,
+			validatorAddress: ECDSA_VALIDATOR_ADDRESS,
 			owner: await new Wallet(PRIVATE_KEY).getAddress(),
 		}
 
@@ -125,7 +125,7 @@ describe('sendop', () => {
 	it('should deploy MyAccount and set number in one user operation', async () => {
 		const creationOptions = {
 			salt: hexlify(randomBytes(32)),
-			validatorAddress: ECDSA_VALIDATOR,
+			validatorAddress: ECDSA_VALIDATOR_ADDRESS,
 			owner: await new Wallet(PRIVATE_KEY).getAddress(),
 		}
 		const deployedAddress = await MyAccount.getNewAddress(client, creationOptions)
@@ -142,7 +142,7 @@ describe('sendop', () => {
 			bundler: new PimlicoBundler(chainId, BUNDLER_URL),
 			executions: [
 				{
-					to: COUNTER,
+					to: COUNTER_ADDRESS,
 					data: new Interface(['function setNumber(uint256)']).encodeFunctionData('setNumber', [number]),
 					value: '0x0',
 				},
@@ -150,7 +150,7 @@ describe('sendop', () => {
 			opGetter: myAccount,
 			pmGetter: new MyPaymaster({
 				client,
-				paymasterAddress: CHARITY_PAYMASTER,
+				paymasterAddress: CHARITY_PAYMASTER_ADDRESS,
 			}),
 			initCode: MyAccount.getInitCode(creationOptions),
 		})

@@ -1,14 +1,12 @@
 import { sendop } from '@/core'
-import { MyAccount, MyPaymaster, PimlicoBundler } from '@/index'
+import { ECDSA_VALIDATOR_ADDRESS, MyAccount, PimlicoBundler } from '@/index'
 import { ECDSAValidator } from '@/validators/ecdsa_validator'
 import { Interface, JsonRpcProvider, toNumber, Wallet } from 'ethers'
-import { CHARITY_PAYMASTER, COUNTER, ECDSA_VALIDATOR, setup } from './utils'
+import { CHARITY_PAYMASTER_ADDRESS, COUNTER_ADDRESS, MyPaymaster, setup } from './utils'
 
 // error: AccountAccessUnauthorized()
 
-const { logger, chainId, CLIENT_URL, BUNDLER_URL, PRIVATE_KEY } = setup({
-	chainId: '7078815900',
-})
+const { logger, chainId, CLIENT_URL, BUNDLER_URL, PRIVATE_KEY } = await setup()
 logger.info(`Chain ID: ${chainId}`)
 
 const signer = new Wallet(PRIVATE_KEY)
@@ -26,7 +24,7 @@ const op = await sendop({
 	bundler: new PimlicoBundler(chainId, BUNDLER_URL),
 	executions: [
 		{
-			to: COUNTER,
+			to: COUNTER_ADDRESS,
 			data: new Interface(['function setNumber(uint256)']).encodeFunctionData('setNumber', [number]),
 			value: '0x0',
 		},
@@ -35,14 +33,14 @@ const op = await sendop({
 		client,
 		bundler: new PimlicoBundler(chainId, BUNDLER_URL),
 		erc7579Validator: new ECDSAValidator({
-			address: ECDSA_VALIDATOR,
+			address: ECDSA_VALIDATOR_ADDRESS,
 			client,
 			signer: new Wallet(PRIVATE_KEY),
 		}),
 	}),
 	pmGetter: new MyPaymaster({
 		client,
-		paymasterAddress: CHARITY_PAYMASTER,
+		paymasterAddress: CHARITY_PAYMASTER_ADDRESS,
 	}),
 })
 
