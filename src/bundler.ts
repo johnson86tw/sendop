@@ -14,62 +14,38 @@ export class PimlicoBundler implements Bundler {
 	}
 
 	async getGasValues(userOp: UserOp) {
-		let curGasPrice, estimateGas
+		// Get gas price
+		const curGasPrice = await this.bundler.send({ method: 'pimlico_getUserOperationGasPrice' })
+		if (!curGasPrice?.standard?.maxFeePerGas) {
+			throw new Error('Invalid gas price response from bundler')
+		}
 
-		try {
-			// Get gas price
-			try {
-				curGasPrice = await this.bundler.send({ method: 'pimlico_getUserOperationGasPrice' })
-				if (!curGasPrice?.standard?.maxFeePerGas) {
-					throw new Error('Invalid gas price response from bundler')
-				}
-			} catch (error) {
-				throw new Error('Failed to get gas price from bundler', {
-					cause: error instanceof Error ? error : new Error(String(error)),
-				})
-			}
+		// Set and estimate gas
+		userOp.maxFeePerGas = curGasPrice.standard.maxFeePerGas
+		const estimateGas = await this.bundler.send({
+			method: 'eth_estimateUserOperationGas',
+			params: [userOp, ENTRY_POINT_V07],
+		})
+		if (!estimateGas) {
+			throw new Error('Empty response from gas estimation')
+		}
 
-			// Set and estimate gas
-			userOp.maxFeePerGas = curGasPrice.standard.maxFeePerGas
-			try {
-				estimateGas = await this.bundler.send({
-					method: 'eth_estimateUserOperationGas',
-					params: [userOp, ENTRY_POINT_V07],
-				})
-				if (!estimateGas) {
-					throw new Error('Empty response from gas estimation')
-				}
-			} catch (error) {
-				throw new Error('Failed to estimate operation gas', {
-					cause: error instanceof Error ? error : new Error(String(error)),
-				})
+		// Validate estimation results
+		const requiredFields = ['preVerificationGas', 'verificationGasLimit', 'callGasLimit']
+		for (const field of requiredFields) {
+			if (!(field in estimateGas)) {
+				throw new Error(`Missing required gas estimation field: ${field}`)
 			}
+		}
 
-			// Validate estimation results
-			const requiredFields = ['preVerificationGas', 'verificationGasLimit', 'callGasLimit']
-			for (const field of requiredFields) {
-				if (!(field in estimateGas)) {
-					throw new Error(`Missing required gas estimation field: ${field}`)
-				}
-			}
-
-			return {
-				maxFeePerGas: userOp.maxFeePerGas,
-				maxPriorityFeePerGas: curGasPrice.standard.maxPriorityFeePerGas,
-				preVerificationGas: estimateGas.preVerificationGas,
-				verificationGasLimit: estimateGas.verificationGasLimit,
-				callGasLimit: estimateGas.callGasLimit,
-				paymasterVerificationGasLimit: estimateGas.paymasterVerificationGasLimit,
-				paymasterPostOpGasLimit: estimateGas.paymasterPostOpGasLimit,
-			}
-		} catch (error) {
-			// Ensure we always throw an Error object with a descriptive message
-			if (error instanceof Error) {
-				throw error
-			}
-			throw new Error('Unknown error during gas estimation', {
-				cause: new Error(String(error)),
-			})
+		return {
+			maxFeePerGas: userOp.maxFeePerGas,
+			maxPriorityFeePerGas: curGasPrice.standard.maxPriorityFeePerGas,
+			preVerificationGas: estimateGas.preVerificationGas,
+			verificationGasLimit: estimateGas.verificationGasLimit,
+			callGasLimit: estimateGas.callGasLimit,
+			paymasterVerificationGasLimit: estimateGas.paymasterVerificationGasLimit,
+			paymasterPostOpGasLimit: estimateGas.paymasterPostOpGasLimit,
 		}
 	}
 

@@ -10,6 +10,7 @@ export class RpcProvider {
 	}
 
 	async send(request: RpcRequestArguments) {
+		console.log('Sending request:', request)
 		const response = await fetch(this.url, {
 			method: 'post',
 			headers: {
@@ -24,16 +25,14 @@ export class RpcProvider {
 		})
 
 		const data = await response.json()
+		if (data.error) {
+			const errorMessage = data.error.code
+				? `JSON-RPC Error: ${request.method} ${data.error.code}: ${data.error.message}`
+				: `JSON-RPC Error: ${request.method}: ${data.error.message}`
+			throw new Error(errorMessage)
+		}
 
 		if (!response.ok) {
-			// Check for JSON-RPC error response
-			if (data.error) {
-				const errorMessage = data.error.code
-					? `JSON-RPC Error: ${request.method} ${data.error.code}: ${data.error.message}`
-					: `JSON-RPC Error: ${request.method}: ${data.error.message}`
-				throw new Error(errorMessage)
-			}
-
 			const errorText = await response.text()
 			throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`)
 		}
