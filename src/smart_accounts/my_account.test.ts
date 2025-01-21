@@ -5,9 +5,7 @@ import { JsonRpcProvider, Wallet, ZeroAddress } from 'ethers'
 import { CHARITY_PAYMASTER, ECDSA_VALIDATOR, MY_ACCOUNT_IMPLEMENTATION_ADDRESS, setup } from 'test/utils'
 import { beforeAll, describe, expect, it } from 'vitest'
 
-const { logger, chainId, CLIENT_URL, BUNDLER_URL, PRIVATE_KEY } = setup({
-	chainId: '11155111',
-})
+const { logger, chainId, CLIENT_URL, BUNDLER_URL, PRIVATE_KEY } = await setup()
 
 logger.info(`Chain ID: ${chainId}`)
 

@@ -5,9 +5,7 @@ import { beforeAll, describe, expect, it } from 'vitest'
 import { sendop } from './sendop'
 import type { Bundler, ERC7579Validator, PaymasterGetter } from './types'
 
-const { logger, chainId, CLIENT_URL, BUNDLER_URL, PRIVATE_KEY } = setup({
-	chainId: '11155111',
-})
+const { logger, chainId, CLIENT_URL, BUNDLER_URL, PRIVATE_KEY } = await setup()
 
 logger.info(`Chain ID: ${chainId}`)
 

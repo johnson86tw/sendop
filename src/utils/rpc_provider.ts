@@ -23,15 +23,19 @@ export class RpcProvider {
 			}),
 		})
 
-		if (!response.ok) {
-			throw new Error(`HTTP error! status: ${response.status}`)
-		}
-
 		const data = await response.json()
 
-		// Check for JSON-RPC error response
-		if (data.error) {
-			throw new Error(`JSON-RPC Error: ${request.method} ${data.error.code}: ${data.error.message}`)
+		if (!response.ok) {
+			// Check for JSON-RPC error response
+			if (data.error) {
+				const errorMessage = data.error.code
+					? `JSON-RPC Error: ${request.method} ${data.error.code}: ${data.error.message}`
+					: `JSON-RPC Error: ${request.method}: ${data.error.message}`
+				throw new Error(errorMessage)
+			}
+
+			const errorText = await response.text()
+			throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`)
 		}
 
 		return data.result
