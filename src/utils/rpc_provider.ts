@@ -3,14 +3,15 @@ export type RpcRequestArguments = {
 	readonly params?: readonly unknown[] | object
 }
 export class RpcProvider {
-	private url: string
+	readonly url: string
 
 	constructor(url: string) {
 		this.url = url
 	}
 
 	async send(request: RpcRequestArguments) {
-		console.log('Sending request:', request)
+		// 	console.log('Sending request:', request)
+
 		const response = await fetch(this.url, {
 			method: 'post',
 			headers: {

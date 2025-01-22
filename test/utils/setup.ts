@@ -41,7 +41,7 @@ export async function setup(options?: { chainId?: string }) {
 
 	const getBundlerUrl = (chainId: string) => {
 		if (chainId === 'local') {
-			return 'http://localhost:3000'
+			return 'http://localhost:4337'
 		}
 		return `https://api.pimlico.io/v2/${chainId}/rpc?apikey=${PIMLICO_API_KEY}`
 	}

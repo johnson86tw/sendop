@@ -15,7 +15,6 @@ describe('Kernel', () => {
 	let erc7579Validator: ERC7579Validator
 	let pmGetter: PaymasterGetter
 	let kernel: Kernel
-	const KERNEL_ADDRESS = '0x41f88637a749c815a31fe2867fbdf59af7b2fceb'
 
 	beforeAll(() => {
 		signer = new Wallet(PRIVATE_KEY)
@@ -31,7 +30,7 @@ describe('Kernel', () => {
 			paymasterAddress: CHARITY_PAYMASTER_ADDRESS,
 		})
 
-		kernel = new Kernel(KERNEL_ADDRESS, {
+		kernel = new Kernel('', {
 			client,
 			bundler,
 			erc7579Validator,
@@ -91,6 +90,8 @@ describe('Kernel', () => {
 	})
 
 	describe('Operations', () => {
+		let kernel: Kernel
+
 		it('should getNewAddress', async () => {
 			const validatorAddress = '0xd577C0746c19DeB788c0D698EcAf66721DC2F7A4'
 			const owner = '0xd78B5013757Ea4A7841811eF770711e6248dC282'
@@ -109,7 +110,7 @@ describe('Kernel', () => {
 
 			const deployedAddress = await Kernel.getNewAddress(client, creationOptions)
 
-			const kernel = new Kernel(deployedAddress, {
+			kernel = new Kernel(deployedAddress, {
 				client,
 				bundler,
 				erc7579Validator,
@@ -126,7 +127,7 @@ describe('Kernel', () => {
 		}, 100_000)
 
 		it('should setNumber', async () => {
-			const number = 100
+			const number = Math.floor(Math.random() * 1000000)
 			const op = await kernel.send([
 				{
 					to: COUNTER_ADDRESS,
