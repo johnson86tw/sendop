@@ -32,7 +32,7 @@
 		}
 	},
 	"dependencies": {
-		"ethers": ">=6.13.4"
+		"ethers": "^6.13.4"
 	},
 	"devDependencies": {
 		"consola": "^3.2.3",
