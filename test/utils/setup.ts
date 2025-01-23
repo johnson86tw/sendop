@@ -54,7 +54,9 @@ export async function setup(options?: { chainId?: string }) {
 
 	// If using local network, fetch actual chainId from the network
 	let actualChainId = chainId
+	let isLocal = false
 	if (chainId === 'local') {
+		isLocal = true
 		try {
 			const response = await fetch(CLIENT_URL, {
 				method: 'POST',
@@ -74,6 +76,7 @@ export async function setup(options?: { chainId?: string }) {
 	}
 
 	return {
+		isLocal,
 		logger,
 		chainId: actualChainId,
 		CLIENT_URL,

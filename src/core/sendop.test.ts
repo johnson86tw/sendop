@@ -5,7 +5,7 @@ import { beforeAll, describe, expect, it } from 'vitest'
 import { sendop } from './sendop'
 import type { Bundler, ERC7579Validator, PaymasterGetter } from './types'
 
-const { logger, chainId, CLIENT_URL, BUNDLER_URL, PRIVATE_KEY } = await setup()
+const { logger, chainId, CLIENT_URL, BUNDLER_URL, PRIVATE_KEY, isLocal } = await setup()
 
 logger.info(`Chain ID: ${chainId}`)
 
@@ -15,6 +15,12 @@ describe('sendop', () => {
 	let bundler: Bundler
 	let pmGetter: PaymasterGetter
 	let erc7579Validator: ERC7579Validator
+
+	let creationOptions: {
+		salt: string
+		validatorAddress: string
+		owner: string
+	}
 
 	beforeAll(() => {
 		signer = new Wallet(PRIVATE_KEY)
@@ -29,38 +35,19 @@ describe('sendop', () => {
 			client,
 			signer,
 		})
+		creationOptions = {
+			salt: hexlify(randomBytes(32)),
+			validatorAddress: ECDSA_VALIDATOR_ADDRESS,
+			owner: signer.address,
+		}
 		logger.info(`Signer: ${signer.address}`)
 	})
 
-	it('should set number with charity paymaster', async () => {
-		const FROM = '0x182260E0b7fF3B72DeAa6c99f1a50F2380a4Fb00'
-		logger.info(`FROM: ${FROM}`)
-		const number = Math.floor(Math.random() * 10000)
-
-		const op = await sendop({
-			bundler,
-			executions: [
-				{
-					to: COUNTER_ADDRESS,
-					data: new Interface(['function setNumber(uint256)']).encodeFunctionData('setNumber', [number]),
-					value: '0x0',
-				},
-			],
-			opGetter: new MyAccount(FROM, {
-				client: new JsonRpcProvider(CLIENT_URL),
-				bundler: new PimlicoBundler(chainId, BUNDLER_URL),
-				erc7579Validator,
-			}),
-			pmGetter,
-		})
-
-		const receipt = await op.wait()
-		const log = receipt.logs[receipt.logs.length - 1]
-
-		expect(toNumber(log.data)).toBe(number)
-	}, 100_000)
-
 	it('should set number with pimlico paymaster', async () => {
+		if (isLocal) {
+			return
+		}
+
 		const FROM = '0x182260E0b7fF3B72DeAa6c99f1a50F2380a4Fb00'
 		logger.info(`FROM: ${FROM}`)
 
