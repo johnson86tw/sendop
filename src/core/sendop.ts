@@ -41,14 +41,14 @@ export async function sendop(options: {
 	userOp.signature = await opGetter.getDummySignature()
 
 	// if pm, get pmStubData
-	let isFinal = false
+	let pmIsFinal = false
 	if (pmGetter) {
 		const pmStubData = await pmGetter.getPaymasterStubData(userOp)
 		userOp.paymaster = pmStubData.paymaster ?? null
 		userOp.paymasterData = pmStubData.paymasterData ?? '0x'
 		userOp.paymasterVerificationGasLimit = pmStubData.paymasterVerificationGasLimit ?? '0x0'
 		userOp.paymasterPostOpGasLimit = pmStubData.paymasterPostOpGasLimit ?? '0x0'
-		isFinal = pmStubData.isFinal ?? false
+		pmIsFinal = pmStubData.isFinal ?? false
 	}
 
 	// esitmate userOp
@@ -64,7 +64,7 @@ export async function sendop(options: {
 	userOp.paymasterPostOpGasLimit = gasValues.paymasterPostOpGasLimit
 
 	// if pm && !isFinal, get pmData
-	if (pmGetter && pmGetter.getPaymasterData && !isFinal) {
+	if (pmGetter && pmGetter.getPaymasterData && !pmIsFinal) {
 		const pmData = await pmGetter.getPaymasterData(userOp)
 		userOp.paymaster = pmData.paymaster ?? null
 		userOp.paymasterData = pmData.paymasterData ?? '0x'
