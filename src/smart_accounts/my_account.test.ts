@@ -5,7 +5,7 @@ import { JsonRpcProvider, Wallet, ZeroAddress } from 'ethers'
 import { CHARITY_PAYMASTER_ADDRESS, MyPaymaster, setup } from 'test/utils'
 import { beforeAll, describe, expect, it } from 'vitest'
 
-const { logger, chainId, CLIENT_URL, BUNDLER_URL, PRIVATE_KEY } = await setup()
+const { logger, chainId, CLIENT_URL, BUNDLER_URL, privateKey } = await setup()
 
 logger.info(`Chain ID: ${chainId}`)
 
@@ -18,13 +18,13 @@ describe('MyAccount', () => {
 	let myAccount: MyAccount
 
 	beforeAll(() => {
-		signer = new Wallet(PRIVATE_KEY)
+		signer = new Wallet(privateKey)
 		client = new JsonRpcProvider(CLIENT_URL)
 		bundler = new PimlicoBundler(chainId, BUNDLER_URL)
 		erc7579Validator = new ECDSAValidator({
 			address: ECDSA_VALIDATOR_ADDRESS,
 			client,
-			signer: new Wallet(PRIVATE_KEY),
+			signer: new Wallet(privateKey),
 		})
 		pmGetter = new MyPaymaster({
 			client,

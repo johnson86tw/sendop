@@ -3,12 +3,12 @@ import { formatEther, JsonRpcProvider, parseEther, Wallet } from 'ethers'
 import { CHARITY_PAYMASTER_ADDRESS } from './utils/test_address'
 import { setup } from './utils/setup'
 
-const { CLIENT_URL, PRIVATE_KEY, chainId, logger } = await setup()
+const { CLIENT_URL, privateKey, chainId, logger } = await setup()
 
 logger.info(`Chain ID: ${chainId}`)
 
 const provider = new JsonRpcProvider(CLIENT_URL)
-const signer = new Wallet(PRIVATE_KEY, provider)
+const signer = new Wallet(privateKey, provider)
 const entryPoint = getEntryPointContract(signer)
 
 const balance = await entryPoint.balanceOf(CHARITY_PAYMASTER_ADDRESS)

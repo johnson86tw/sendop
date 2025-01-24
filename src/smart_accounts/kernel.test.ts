@@ -4,7 +4,7 @@ import { hexlify, Interface, JsonRpcProvider, randomBytes, toNumber, Wallet } fr
 import { CHARITY_PAYMASTER_ADDRESS, COUNTER_ADDRESS, MyPaymaster, setup } from 'test/utils'
 import { beforeAll, describe, expect, it } from 'vitest'
 
-const { logger, chainId, CLIENT_URL, BUNDLER_URL, PRIVATE_KEY } = await setup()
+const { logger, chainId, CLIENT_URL, BUNDLER_URL, privateKey } = await setup()
 
 logger.info(`Chain ID: ${chainId}`)
 
@@ -17,13 +17,13 @@ describe('Kernel', () => {
 	let kernel: Kernel
 
 	beforeAll(() => {
-		signer = new Wallet(PRIVATE_KEY)
+		signer = new Wallet(privateKey)
 		client = new JsonRpcProvider(CLIENT_URL)
 		bundler = new PimlicoBundler(chainId, BUNDLER_URL)
 		erc7579Validator = new ECDSAValidator({
 			address: ECDSA_VALIDATOR_ADDRESS,
 			client,
-			signer: new Wallet(PRIVATE_KEY),
+			signer: new Wallet(privateKey),
 		})
 		pmGetter = new MyPaymaster({
 			client,
@@ -92,24 +92,20 @@ describe('Kernel', () => {
 	describe('Operations', () => {
 		let kernel: Kernel
 
-		it('should getNewAddress', async () => {
-			const validatorAddress = '0xd577C0746c19DeB788c0D698EcAf66721DC2F7A4'
-			const owner = '0xd78B5013757Ea4A7841811eF770711e6248dC282'
-			const salt = hexlify(randomBytes(32))
+		const creationOptions = {
+			salt: hexlify(randomBytes(32)),
+			validatorAddress: ECDSA_VALIDATOR_ADDRESS,
+			owner: signer.address,
+		}
 
-			const address = await Kernel.getNewAddress(client, { salt, validatorAddress, owner })
-			expect(address).not.toBe('0x0000000000000000000000000000000000000000')
+		let deployedAddress: string
+
+		it('should getNewAddress', async () => {
+			deployedAddress = await Kernel.getNewAddress(client, creationOptions)
+			expect(deployedAddress).not.toBe('0x0000000000000000000000000000000000000000')
 		})
 
 		it('should deploy the contract', async () => {
-			const creationOptions = {
-				salt: hexlify(randomBytes(32)),
-				validatorAddress: ECDSA_VALIDATOR_ADDRESS,
-				owner: signer.address,
-			}
-
-			const deployedAddress = await Kernel.getNewAddress(client, creationOptions)
-
 			kernel = new Kernel(deployedAddress, {
 				client,
 				bundler,

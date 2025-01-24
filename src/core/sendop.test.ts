@@ -5,7 +5,7 @@ import { beforeAll, describe, expect, it } from 'vitest'
 import { sendop } from './sendop'
 import type { Bundler, ERC7579Validator, PaymasterGetter } from './types'
 
-const { logger, chainId, CLIENT_URL, BUNDLER_URL, PRIVATE_KEY, isLocal } = await setup()
+const { logger, chainId, CLIENT_URL, BUNDLER_URL, privateKey, isLocal } = await setup()
 
 logger.info(`Chain ID: ${chainId}`)
 
@@ -23,7 +23,7 @@ describe('sendop', () => {
 	}
 
 	beforeAll(() => {
-		signer = new Wallet(PRIVATE_KEY)
+		signer = new Wallet(privateKey)
 		client = new JsonRpcProvider(CLIENT_URL)
 		bundler = new PimlicoBundler(chainId, BUNDLER_URL)
 		pmGetter = new MyPaymaster({
@@ -83,7 +83,7 @@ describe('sendop', () => {
 		const creationOptions = {
 			salt: hexlify(randomBytes(32)),
 			validatorAddress: ECDSA_VALIDATOR_ADDRESS,
-			owner: await new Wallet(PRIVATE_KEY).getAddress(),
+			owner: await new Wallet(privateKey).getAddress(),
 		}
 
 		const deployedAddress = await MyAccount.getNewAddress(client, creationOptions)
@@ -113,7 +113,7 @@ describe('sendop', () => {
 		const creationOptions = {
 			salt: hexlify(randomBytes(32)),
 			validatorAddress: ECDSA_VALIDATOR_ADDRESS,
-			owner: await new Wallet(PRIVATE_KEY).getAddress(),
+			owner: await new Wallet(privateKey).getAddress(),
 		}
 		const deployedAddress = await MyAccount.getNewAddress(client, creationOptions)
 

@@ -25,13 +25,15 @@ export async function sendop(options: {
 	const userOp = getEmptyUserOp()
 	userOp.sender = await opGetter.getSender()
 
-	if (initCode) {
-		if (initCode && initCode !== '0x') {
-			// TODO: check if initCode is valid
-			const initCodeWithoutPrefix = initCode.slice(2) // remove 0x prefix
-			userOp.factory = '0x' + initCodeWithoutPrefix.slice(0, 40)
-			userOp.factoryData = '0x' + initCodeWithoutPrefix.slice(40)
-		}
+	if (initCode && initCode !== '0x') {
+		// TODO: check if initCode is valid
+		const initCodeWithoutPrefix = initCode.slice(2) // remove 0x prefix
+		userOp.factory = '0x' + initCodeWithoutPrefix.slice(0, 40)
+		userOp.factoryData = '0x' + initCodeWithoutPrefix.slice(40)
+
+		// console.log('initCode', initCode)
+		// console.log('userOp.factory', userOp.factory)
+		// console.log('userOp.factoryData', userOp.factoryData)
 	}
 
 	userOp.nonce = await opGetter.getNonce()

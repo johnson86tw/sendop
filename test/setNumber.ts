@@ -5,7 +5,7 @@ import { ECDSAValidator } from '@/validators/ecdsa_validator'
 import { Interface, JsonRpcProvider, toNumber, Wallet } from 'ethers'
 import { CHARITY_PAYMASTER_ADDRESS, COUNTER_ADDRESS, MyPaymaster, setup } from './utils'
 
-const { logger, chainId, CLIENT_URL, BUNDLER_URL, PRIVATE_KEY } = await setup()
+const { logger, chainId, CLIENT_URL, BUNDLER_URL, privateKey } = await setup()
 logger.info(`Chain ID: ${chainId}`)
 
 const FROM = '0x182260E0b7fF3B72DeAa6c99f1a50F2380a4Fb00'
@@ -29,7 +29,7 @@ const op = await sendop({
 		erc7579Validator: new ECDSAValidator({
 			address: ECDSA_VALIDATOR_ADDRESS,
 			client: new JsonRpcProvider(CLIENT_URL),
-			signer: new Wallet(PRIVATE_KEY),
+			signer: new Wallet(privateKey),
 		}),
 	}),
 	pmGetter: new MyPaymaster({

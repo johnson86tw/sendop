@@ -55,8 +55,11 @@ export async function setup(options?: { chainId?: string }) {
 	// If using local network, fetch actual chainId from the network
 	let actualChainId = chainId
 	let isLocal = false
+	let privateKey = PRIVATE_KEY
+
 	if (chainId === 'local') {
 		isLocal = true
+		privateKey = '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80'
 		try {
 			const response = await fetch(CLIENT_URL, {
 				method: 'POST',
@@ -81,7 +84,7 @@ export async function setup(options?: { chainId?: string }) {
 		chainId: actualChainId,
 		CLIENT_URL,
 		BUNDLER_URL,
-		PRIVATE_KEY: PRIVATE_KEY || '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80', // default to private key from anvil account 0
+		privateKey,
 		SALT,
 	}
 }

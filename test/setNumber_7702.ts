@@ -6,10 +6,10 @@ import { CHARITY_PAYMASTER_ADDRESS, COUNTER_ADDRESS, MyPaymaster, setup } from '
 
 // error: AccountAccessUnauthorized()
 
-const { logger, chainId, CLIENT_URL, BUNDLER_URL, PRIVATE_KEY } = await setup()
+const { logger, chainId, CLIENT_URL, BUNDLER_URL, privateKey } = await setup()
 logger.info(`Chain ID: ${chainId}`)
 
-const signer = new Wallet(PRIVATE_KEY)
+const signer = new Wallet(privateKey)
 const signerAddress = await signer.getAddress()
 
 const FROM = signerAddress
@@ -35,7 +35,7 @@ const op = await sendop({
 		erc7579Validator: new ECDSAValidator({
 			address: ECDSA_VALIDATOR_ADDRESS,
 			client,
-			signer: new Wallet(PRIVATE_KEY),
+			signer: new Wallet(privateKey),
 		}),
 	}),
 	pmGetter: new MyPaymaster({
