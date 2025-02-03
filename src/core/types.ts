@@ -27,7 +27,7 @@ export interface AccountGetter {
 
 export interface SignatureGetter {
 	getDummySignature(): Promise<string> | string
-	getSignature(userOpHash: string): Promise<string> | string
+	getSignature(userOpHash: Uint8Array): Promise<string> | string
 }
 
 export interface ERC7579Validator extends SignatureGetter {

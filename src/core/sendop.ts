@@ -1,4 +1,4 @@
-import { AbiCoder, concat, keccak256, toBeHex, zeroPadValue } from 'ethers'
+import { AbiCoder, concat, getBytes, keccak256, toBeHex, zeroPadValue } from 'ethers'
 import type {
 	Bundler,
 	Execution,
@@ -72,7 +72,7 @@ export async function sendop(options: {
 
 	// sign userOp
 	const userOpHash = getUserOpHash(packUserOp(userOp), ENTRY_POINT_V07, bundler.chainId)
-	userOp.signature = await opGetter.getSignature(userOpHash)
+	userOp.signature = await opGetter.getSignature(getBytes(userOpHash))
 
 	// send userOp
 	await bundler.sendUserOperation(userOp)

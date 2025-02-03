@@ -81,7 +81,7 @@ export class MyAccount extends SmartAccount {
 		return this.erc7579Validator.getDummySignature()
 	}
 
-	async getSignature(hash: string) {
+	async getSignature(hash: Uint8Array) {
 		return this.erc7579Validator.getSignature(hash)
 	}
 

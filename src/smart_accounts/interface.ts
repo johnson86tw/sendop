@@ -7,7 +7,7 @@ export abstract class SmartAccount implements OperationGetter {
 	abstract getNonce(): Promise<string> | string
 	abstract getCallData(executions: Execution[]): Promise<string> | string
 	abstract getDummySignature(): Promise<string> | string
-	abstract getSignature(userOpHash: string): Promise<string> | string
+	abstract getSignature(userOpHash: Uint8Array): Promise<string> | string
 
 	// static
 	static accountId(): string {

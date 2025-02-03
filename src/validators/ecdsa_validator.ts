@@ -34,9 +34,8 @@ export class ECDSAValidator implements ERC7579Validator {
 		return '0xfffffffffffffffffffffffffffffff0000000000000000000000000000000007aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1c'
 	}
 
-	async getSignature(userOpHash: string) {
-		const signature = await this.#signer.signMessage(getBytes(userOpHash))
-		return signature
+	async getSignature(userOpHash: Uint8Array) {
+		return await this.#signer.signMessage(userOpHash)
 	}
 
 	async requestAccounts(): Promise<string[]> {
