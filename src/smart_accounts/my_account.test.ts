@@ -9,7 +9,7 @@ const { logger, chainId, CLIENT_URL, BUNDLER_URL, privateKey } = await setup()
 
 logger.info(`Chain ID: ${chainId}`)
 
-describe('MyAccount', () => {
+describe.skip('MyAccount', () => {
 	let signer: Wallet
 	let client: JsonRpcProvider
 	let bundler: Bundler

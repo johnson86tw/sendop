@@ -1,8 +1,9 @@
 import type { Bundler, ERC7579Validator, Execution, PaymasterGetter, SendOpResult } from '@/core'
-import { sendop, SmartAccount } from '@/index'
+import { SmartAccount } from './interface'
 import { abiEncode, getEntryPointContract, is32BytesHexString, padLeft } from '@/utils/ethers'
 import type { BytesLike } from 'ethers'
 import { concat, Contract, hexlify, Interface, isAddress, JsonRpcProvider, toBeHex, ZeroAddress } from 'ethers'
+import { sendop } from '@/core'
 
 const KERNEL_FACTORY_ADDRESS = '0xaac5D4240AF87249B3f71BC8E4A2cae074A3E419'
 

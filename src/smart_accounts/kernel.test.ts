@@ -91,14 +91,16 @@ describe('Kernel', () => {
 
 	describe('Operations', () => {
 		let kernel: Kernel
-
-		const creationOptions = {
-			salt: hexlify(randomBytes(32)),
-			validatorAddress: ECDSA_VALIDATOR_ADDRESS,
-			owner: signer.address,
-		}
-
+		let creationOptions: any
 		let deployedAddress: string
+
+		beforeAll(() => {
+			creationOptions = {
+				salt: hexlify(randomBytes(32)),
+				validatorAddress: ECDSA_VALIDATOR_ADDRESS,
+				owner: signer.address,
+			}
+		})
 
 		it('should getNewAddress', async () => {
 			deployedAddress = await Kernel.getNewAddress(client, creationOptions)
