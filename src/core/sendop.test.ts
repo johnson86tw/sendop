@@ -1,102 +1,83 @@
 import { hexlify, Interface, JsonRpcProvider, randomBytes, toNumber, Wallet } from 'ethers'
-import {
-	CHARITY_PAYMASTER,
-	COUNTER,
-	ECDSA_VALIDATOR,
-	PimlicoBundler,
-	MyPaymaster,
-	PimlicoPaymaster,
-	setup,
-	OpBuilder,
-} from 'test/utils'
+import { CHARITY_PAYMASTER_ADDRESS, COUNTER_ADDRESS, MyPaymaster, PimlicoPaymaster, setup } from 'test/utils'
 import { beforeAll, describe, expect, it } from 'vitest'
-import { ECDSAValidator } from '../validators/ecdsa_validator'
-import { MyAccount } from '../vendors/my_account'
 import { sendop } from './sendop'
+import type { Bundler, ERC7579Validator, PaymasterGetter } from './types'
+import { PimlicoBundler } from '@/bundler'
+import { ECDSAValidator } from '@/validators'
+import { ECDSA_VALIDATOR_ADDRESS } from '@/address'
+import { Kernel } from '@/smart_accounts'
 
-const { logger, chainId, CLIENT_URL, BUNDLER_URL, PRIVATE_KEY } = setup({
-	chainId: '11155111',
-})
+const { logger, chainId, CLIENT_URL, BUNDLER_URL, privateKey, isLocal } = await setup()
 
 logger.info(`Chain ID: ${chainId}`)
 
 describe('sendop', () => {
 	let signer: Wallet
 	let client: JsonRpcProvider
+	let bundler: Bundler
+	let pmGetter: PaymasterGetter
+	let erc7579Validator: ERC7579Validator
+
+	let creationOptions: {
+		salt: string
+		validatorAddress: string
+		owner: string
+	}
 
 	beforeAll(() => {
-		signer = new Wallet(PRIVATE_KEY)
+		signer = new Wallet(privateKey)
 		client = new JsonRpcProvider(CLIENT_URL)
+		bundler = new PimlicoBundler(chainId, BUNDLER_URL)
+		pmGetter = new MyPaymaster({
+			client,
+			paymasterAddress: CHARITY_PAYMASTER_ADDRESS,
+		})
+		erc7579Validator = new ECDSAValidator({
+			address: ECDSA_VALIDATOR_ADDRESS,
+			client,
+			signer,
+		})
+		creationOptions = {
+			salt: hexlify(randomBytes(32)),
+			validatorAddress: ECDSA_VALIDATOR_ADDRESS,
+			owner: signer.address,
+		}
+
 		logger.info(`Signer: ${signer.address}`)
 	})
 
-	it('should set number with charity paymaster', async () => {
+	it('should set number with pimlico paymaster', async () => {
+		if (isLocal) {
+			return
+		}
+
 		const FROM = '0x182260E0b7fF3B72DeAa6c99f1a50F2380a4Fb00'
 		logger.info(`FROM: ${FROM}`)
-		const bundler = new PimlicoBundler(chainId, BUNDLER_URL)
+
 		const number = Math.floor(Math.random() * 10000)
 
-		const op = await sendop({
-			bundler,
-			from: FROM,
-			executions: [
-				{
-					to: COUNTER,
-					data: new Interface(['function setNumber(uint256)']).encodeFunctionData('setNumber', [number]),
-					value: '0x0',
-				},
-			],
-			opBuilder: new OpBuilder({
-				client: new JsonRpcProvider(CLIENT_URL),
-				vendor: new MyAccount(),
-				validator: new ECDSAValidator({
-					address: ECDSA_VALIDATOR,
-					clientUrl: CLIENT_URL,
-					signer,
-				}),
-				from: FROM,
-			}),
-			pmBuilder: new MyPaymaster({
+		const kernel = new Kernel(FROM, {
+			client: new JsonRpcProvider(CLIENT_URL),
+			bundler: new PimlicoBundler(chainId, BUNDLER_URL),
+			erc7579Validator,
+			pmGetter: new PimlicoPaymaster({
 				chainId,
-				clientUrl: CLIENT_URL,
-				paymasterAddress: CHARITY_PAYMASTER,
+				url: BUNDLER_URL,
 			}),
 		})
 
-		const receipt = await op.wait()
-		const log = receipt.logs[receipt.logs.length - 1]
-
-		expect(toNumber(log.data)).toBe(number)
-	}, 100_000)
-
-	it('should set number with pimlico paymaster', async () => {
-		const FROM = '0x182260E0b7fF3B72DeAa6c99f1a50F2380a4Fb00'
-		logger.info(`FROM: ${FROM}`)
-		const bundler = new PimlicoBundler(chainId, BUNDLER_URL)
-
-		const number = Math.floor(Math.random() * 10000)
-
 		const op = await sendop({
 			bundler,
-			from: FROM,
 			executions: [
 				{
-					to: COUNTER,
+					to: COUNTER_ADDRESS,
 					data: new Interface(['function setNumber(uint256)']).encodeFunctionData('setNumber', [number]),
 					value: '0x0',
 				},
 			],
-			opBuilder: new OpBuilder({
-				client: new JsonRpcProvider(CLIENT_URL),
-				vendor: new MyAccount(),
-				validator: new ECDSAValidator({
-					address: ECDSA_VALIDATOR,
-					clientUrl: CLIENT_URL,
-					signer,
-				}),
-				from: FROM,
-			}),
-			pmBuilder: new PimlicoPaymaster({
+			opGetter: kernel,
+			pmGetter: new PimlicoPaymaster({
 				chainId,
 				url: BUNDLER_URL,
 			}),
@@ -108,81 +89,75 @@ describe('sendop', () => {
 		expect(toNumber(log.data)).toBe(number)
 	}, 100000)
 
-	it('should deploy MyAccount', async () => {
+	it('should deploy Kernel', async () => {
 		const creationOptions = {
 			salt: hexlify(randomBytes(32)),
-			validatorAddress: ECDSA_VALIDATOR,
-			owner: await new Wallet(PRIVATE_KEY).getAddress(),
+			validatorAddress: ECDSA_VALIDATOR_ADDRESS,
+			owner: await new Wallet(privateKey).getAddress(),
 		}
-		const vendor = new MyAccount(CLIENT_URL, creationOptions)
-		const deployedAddress = await vendor.getAddress()
-		const FROM = deployedAddress
+
+		const deployedAddress = await Kernel.getNewAddress(client, creationOptions)
+
+		const kernel = new Kernel(deployedAddress, {
+			client: new JsonRpcProvider(CLIENT_URL),
+			bundler: new PimlicoBundler(chainId, BUNDLER_URL),
+			erc7579Validator,
+			pmGetter,
+		})
 
 		const op = await sendop({
 			bundler: new PimlicoBundler(chainId, BUNDLER_URL),
-			from: FROM,
 			executions: [],
-			opBuilder: new OpBuilder({
-				client: new JsonRpcProvider(CLIENT_URL),
-				vendor,
-				validator: new ECDSAValidator({
-					address: ECDSA_VALIDATOR,
-					clientUrl: CLIENT_URL,
-					signer: new Wallet(PRIVATE_KEY),
-				}),
-				from: FROM,
-				isCreation: true,
-			}),
-			pmBuilder: new MyPaymaster({
-				chainId,
-				clientUrl: CLIENT_URL,
-				paymasterAddress: CHARITY_PAYMASTER,
-			}),
+			opGetter: kernel,
+			pmGetter,
+			initCode: kernel.getInitCode(creationOptions),
 		})
+		logger.info(`hash: ${op.hash}`)
 		await op.wait()
+		logger.info('deployed address: ', deployedAddress)
+
 		const code = await client.getCode(deployedAddress)
 		expect(code).not.toBe('0x')
 	}, 100_000)
 
-	it('should deploy MyAccount and set number in one user operation', async () => {
+	it('should deploy Kernel and set number in one user operation', async () => {
 		const creationOptions = {
 			salt: hexlify(randomBytes(32)),
-			validatorAddress: ECDSA_VALIDATOR,
-			owner: await new Wallet(PRIVATE_KEY).getAddress(),
+			validatorAddress: ECDSA_VALIDATOR_ADDRESS,
+			owner: await new Wallet(privateKey).getAddress(),
 		}
-		const vendor = new MyAccount(CLIENT_URL, creationOptions)
-		const deployedAddress = await vendor.getAddress()
-		const FROM = deployedAddress
+		const deployedAddress = await Kernel.getNewAddress(client, creationOptions)
+
+		const kernel = new Kernel(deployedAddress, {
+			client: new JsonRpcProvider(CLIENT_URL),
+			bundler: new PimlicoBundler(chainId, BUNDLER_URL),
+			erc7579Validator,
+			pmGetter,
+		})
+
 		const number = Math.floor(Math.random() * 10000)
 
 		const op = await sendop({
 			bundler: new PimlicoBundler(chainId, BUNDLER_URL),
-			from: FROM,
 			executions: [
 				{
-					to: COUNTER,
+					to: COUNTER_ADDRESS,
 					data: new Interface(['function setNumber(uint256)']).encodeFunctionData('setNumber', [number]),
 					value: '0x0',
 				},
 			],
-			opBuilder: new OpBuilder({
-				client: new JsonRpcProvider(CLIENT_URL),
-				vendor,
-				validator: new ECDSAValidator({
-					address: ECDSA_VALIDATOR,
-					clientUrl: CLIENT_URL,
-					signer: new Wallet(PRIVATE_KEY),
-				}),
-				from: FROM,
-				isCreation: true,
+			opGetter: kernel,
+			pmGetter: new MyPaymaster({
+				client,
+				paymasterAddress: CHARITY_PAYMASTER_ADDRESS,
 			}),
-			pmBuilder: new MyPaymaster({
-				chainId,
-				clientUrl: CLIENT_URL,
-				paymasterAddress: CHARITY_PAYMASTER,
-			}),
+			initCode: kernel.getInitCode(creationOptions),
 		})
+
+		logger.info(`hash: ${op.hash}`)
 		const receipt = await op.wait()
+		logger.info('deployed address: ', deployedAddress)
+
 		const code = await client.getCode(deployedAddress)
 		expect(code).not.toBe('0x')
 		const log = receipt.logs[receipt.logs.length - 1]

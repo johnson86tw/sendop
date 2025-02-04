@@ -1,10 +1,11 @@
-import { AbiCoder, concat, keccak256, toBeHex, zeroPadValue } from 'ethers'
+import { AbiCoder, concat, getBytes, keccak256, toBeHex, zeroPadValue } from 'ethers'
 import type {
 	Bundler,
 	Execution,
-	OperationBuilder,
-	PaymasterBuilder,
+	OperationGetter,
 	PackedUserOp,
+	PaymasterGetter,
+	SendOpResult,
 	UserOp,
 	UserOpReceipt,
 } from './types'
@@ -13,39 +14,41 @@ export const ENTRY_POINT_V07 = '0x0000000071727De22E5E9d8BAf0edAc6f37da032'
 
 export async function sendop(options: {
 	bundler: Bundler
-	from: string
 	executions: Execution[]
-	opBuilder: OperationBuilder
-	pmBuilder?: PaymasterBuilder
-}) {
-	const { bundler, from, executions, opBuilder, pmBuilder } = options
+	opGetter: OperationGetter
+	pmGetter?: PaymasterGetter
+	initCode?: string // userOp.factory ++ userOp.factoryData
+}): Promise<SendOpResult> {
+	const { bundler, executions, opGetter, pmGetter, initCode } = options
 
 	// build userOp
 	const userOp = getEmptyUserOp()
-	userOp.sender = from
+	userOp.sender = await opGetter.getSender()
 
-	if (opBuilder.getInitCode) {
-		const initCode = await opBuilder.getInitCode()
-		if (initCode && initCode !== '0x') {
-			const initCodeWithoutPrefix = initCode.slice(2) // remove 0x prefix
-			userOp.factory = '0x' + initCodeWithoutPrefix.slice(0, 40)
-			userOp.factoryData = '0x' + initCodeWithoutPrefix.slice(40)
-		}
+	if (initCode && initCode !== '0x') {
+		// TODO: check if initCode is valid
+		const initCodeWithoutPrefix = initCode.slice(2) // remove 0x prefix
+		userOp.factory = '0x' + initCodeWithoutPrefix.slice(0, 40)
+		userOp.factoryData = '0x' + initCodeWithoutPrefix.slice(40)
+
+		// console.log('initCode', initCode)
+		// console.log('userOp.factory', userOp.factory)
+		// console.log('userOp.factoryData', userOp.factoryData)
 	}
 
-	userOp.nonce = await opBuilder.getNonce()
-	userOp.callData = await opBuilder.getCallData(executions)
-	userOp.signature = await opBuilder.getDummySignature()
+	userOp.nonce = await opGetter.getNonce()
+	userOp.callData = await opGetter.getCallData(executions)
+	userOp.signature = await opGetter.getDummySignature()
 
 	// if pm, get pmStubData
-	let isFinal = false
-	if (pmBuilder) {
-		const pmStubData = await pmBuilder.getPaymasterStubData(userOp)
+	let pmIsFinal = false
+	if (pmGetter) {
+		const pmStubData = await pmGetter.getPaymasterStubData(userOp)
 		userOp.paymaster = pmStubData.paymaster ?? null
 		userOp.paymasterData = pmStubData.paymasterData ?? '0x'
 		userOp.paymasterVerificationGasLimit = pmStubData.paymasterVerificationGasLimit ?? '0x0'
 		userOp.paymasterPostOpGasLimit = pmStubData.paymasterPostOpGasLimit ?? '0x0'
-		isFinal = pmStubData.isFinal ?? false
+		pmIsFinal = pmStubData.isFinal ?? false
 	}
 
 	// esitmate userOp
@@ -61,15 +64,15 @@ export async function sendop(options: {
 	userOp.paymasterPostOpGasLimit = gasValues.paymasterPostOpGasLimit
 
 	// if pm && !isFinal, get pmData
-	if (pmBuilder && pmBuilder.getPaymasterData && !isFinal) {
-		const pmData = await pmBuilder.getPaymasterData(userOp)
+	if (pmGetter && pmGetter.getPaymasterData && !pmIsFinal) {
+		const pmData = await pmGetter.getPaymasterData(userOp)
 		userOp.paymaster = pmData.paymaster ?? null
 		userOp.paymasterData = pmData.paymasterData ?? '0x'
 	}
 
 	// sign userOp
 	const userOpHash = getUserOpHash(packUserOp(userOp), ENTRY_POINT_V07, bundler.chainId)
-	userOp.signature = await opBuilder.getSignature(userOpHash)
+	userOp.signature = await opGetter.getSignature(getBytes(userOpHash))
 
 	// send userOp
 	await bundler.sendUserOperation(userOp)

@@ -3,13 +3,15 @@ export type RpcRequestArguments = {
 	readonly params?: readonly unknown[] | object
 }
 export class RpcProvider {
-	private url: string
+	readonly url: string
 
 	constructor(url: string) {
 		this.url = url
 	}
 
 	async send(request: RpcRequestArguments) {
+		// 	console.log('Sending request:', request)
+
 		const response = await fetch(this.url, {
 			method: 'post',
 			headers: {
@@ -23,15 +25,17 @@ export class RpcProvider {
 			}),
 		})
 
-		if (!response.ok) {
-			throw new Error(`HTTP error! status: ${response.status}`)
+		const data = await response.json()
+		if (data.error) {
+			const errorMessage = data.error.code
+				? `JSON-RPC Error: ${request.method} (${data.error.code}): ${data.error.message}`
+				: `JSON-RPC Error: ${request.method}: ${data.error.message}`
+			throw new Error(errorMessage)
 		}
 
-		const data = await response.json()
-
-		// Check for JSON-RPC error response
-		if (data.error) {
-			throw new Error(`JSON-RPC Error: ${request.method} ${data.error.code}: ${data.error.message}`)
+		if (!response.ok) {
+			const errorText = await response.text()
+			throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`)
 		}
 
 		return data.result

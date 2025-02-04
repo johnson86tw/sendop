@@ -21,6 +21,7 @@ export function getEntryPointContract(runner: ContractRunner) {
 			'function getNonce(address sender, uint192 key) external view returns (uint256 nonce)',
 			'function handleOps(tuple(address sender, uint256 nonce, bytes initCode, bytes callData, bytes32 accountGasLimits, uint256 preVerificationGas, bytes32 gasFees, bytes paymasterAndData, bytes signature)[] ops, address payable beneficiary) external',
 			'function depositTo(address account)',
+			'function balanceOf(address account) public view returns (uint256)',
 		],
 		runner,
 	)

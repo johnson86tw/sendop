@@ -17,18 +17,27 @@ export interface Bundler {
 	getUserOperationReceipt(hash: string): Promise<UserOpReceipt>
 }
 
-export interface OperationBuilder {
-	getInitCode?(): Promise<string> | string
+export interface OperationGetter extends AccountGetter, SignatureGetter {}
+
+export interface AccountGetter {
+	getSender(): Promise<string> | string
 	getNonce(): Promise<string> | string
 	getCallData(executions: Execution[]): Promise<string> | string
+}
+
+export interface SignatureGetter {
 	getDummySignature(): Promise<string> | string
-	getSignature(userOpHash: string): Promise<string> | string
+	getSignature(userOpHash: Uint8Array): Promise<string> | string
+}
+
+export interface ERC7579Validator extends SignatureGetter {
+	address(): string
 }
 
 /**
  * refer to ERC-7677
  */
-export interface PaymasterBuilder {
+export interface PaymasterGetter {
 	getPaymasterStubData(userOp: UserOp): Promise<GetPaymasterStubDataResult> | GetPaymasterStubDataResult
 	getPaymasterData?(userOp: UserOp): Promise<GetPaymasterDataResult> | GetPaymasterDataResult
 }
@@ -107,4 +116,9 @@ export type UserOpReceipt = {
 	success: boolean
 	logs: UserOpLog[]
 	receipt: TransactionReceipt
+}
+
+export type SendOpResult = {
+	hash: string
+	wait(): Promise<UserOpReceipt>
 }

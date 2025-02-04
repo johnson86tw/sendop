@@ -1,22 +1,22 @@
 import { Contract, getBytes, JsonRpcProvider, type Signer, EventLog } from 'ethers'
-import type { AccountRequestingValidator } from '../types'
+import type { ERC7579Validator } from '@/core'
 
 type ConstructorOptions = {
 	address: string
-	clientUrl: string
+	client: JsonRpcProvider
 	signer: Signer
 }
 
-export class ECDSAValidator implements AccountRequestingValidator {
-	#address: string
-	#client: JsonRpcProvider
-	#signer: Signer
+export class ECDSAValidator implements ERC7579Validator {
+	readonly #address: string
+	readonly #client: JsonRpcProvider
+	readonly #signer: Signer
 
 	#ecdsaValidator: Contract
 
 	constructor(options: ConstructorOptions) {
 		this.#address = options.address
-		this.#client = new JsonRpcProvider(options.clientUrl)
+		this.#client = options.client
 		this.#signer = options.signer
 
 		this.#ecdsaValidator = new Contract(
@@ -34,9 +34,8 @@ export class ECDSAValidator implements AccountRequestingValidator {
 		return '0xfffffffffffffffffffffffffffffff0000000000000000000000000000000007aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1c'
 	}
 
-	async getSignature(userOpHash: string) {
-		const signature = await this.#signer.signMessage(getBytes(userOpHash))
-		return signature
+	async getSignature(userOpHash: Uint8Array) {
+		return await this.#signer.signMessage(userOpHash)
 	}
 
 	async requestAccounts(): Promise<string[]> {

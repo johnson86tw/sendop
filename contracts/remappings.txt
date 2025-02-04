@@ -1,0 +1,5 @@
+forge-std/=../node_modules/forge-std/src/
+@openzeppelin/=../node_modules/@openzeppelin/contracts/
+@account-abstraction=../node_modules/accountabstraction
+kernel/=../node_modules/kernel/src/
+solady/=../node_modules/solady/src/

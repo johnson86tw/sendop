@@ -1,12 +1,14 @@
 import { sendop } from '@/core'
+import { MyAccount } from '@/smart_accounts/my_account'
 import { ECDSAValidator } from '@/validators/ecdsa_validator'
-import { MyAccount } from '@/vendors/my_account'
 import { Interface, JsonRpcProvider, toNumber, Wallet } from 'ethers'
-import { COUNTER, ECDSA_VALIDATOR, PimlicoBundler, PimlicoPaymaster, setup, OpBuilder } from './utils'
+import { COUNTER_ADDRESS, PimlicoPaymaster, setup } from './utils'
+import { PimlicoBundler } from '@/bundler'
+import { ECDSA_VALIDATOR_ADDRESS } from '@/address'
 
 // only works for sepolia
 
-const { logger, chainId, CLIENT_URL, BUNDLER_URL, PRIVATE_KEY } = setup()
+const { logger, chainId, CLIENT_URL, BUNDLER_URL, privateKey } = await setup()
 logger.info(`Chain ID: ${chainId}`)
 
 const FROM = '0x182260E0b7fF3B72DeAa6c99f1a50F2380a4Fb00'
@@ -17,25 +19,23 @@ logger.info(`Setting number to ${number}`)
 logger.info('Sending op...')
 const op = await sendop({
 	bundler: new PimlicoBundler(chainId, BUNDLER_URL),
-	from: FROM,
 	executions: [
 		{
-			to: COUNTER,
+			to: COUNTER_ADDRESS,
 			data: new Interface(['function setNumber(uint256)']).encodeFunctionData('setNumber', [number]),
 			value: '0x0',
 		},
 	],
-	opBuilder: new OpBuilder({
+	opGetter: new MyAccount(FROM, {
 		client: new JsonRpcProvider(CLIENT_URL),
-		vendor: new MyAccount(),
-		validator: new ECDSAValidator({
-			address: ECDSA_VALIDATOR,
-			clientUrl: CLIENT_URL,
-			signer: new Wallet(PRIVATE_KEY),
+		bundler: new PimlicoBundler(chainId, BUNDLER_URL),
+		erc7579Validator: new ECDSAValidator({
+			address: ECDSA_VALIDATOR_ADDRESS,
+			client: new JsonRpcProvider(CLIENT_URL),
+			signer: new Wallet(privateKey),
 		}),
-		from: FROM,
 	}),
-	pmBuilder: new PimlicoPaymaster({
+	pmGetter: new PimlicoPaymaster({
 		chainId,
 		url: BUNDLER_URL,
 	}),
