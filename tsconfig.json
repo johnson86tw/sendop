@@ -7,8 +7,7 @@
 		"moduleDetection": "force",
 		"allowJs": true,
 
-		// Bundler mode
-		"moduleResolution": "bundler",
+		"moduleResolution": "node", // weird: we cannot use bundler here because of the dependency "accountabstraction" or `bun run build` will complaint type error.
 		"allowImportingTsExtensions": true,
 		"verbatimModuleSyntax": true,
 		"noEmit": true,
