@@ -90,8 +90,8 @@ export async function setup(options?: { chainId?: string }) {
 }
 
 export function getEnv() {
-	if (!process.env.PIMLICO_API_KEY || !process.env.ALCHEMY_API_KEY || !process.env.PRIVATE_KEY) {
-		throw new Error('Missing .env')
+	if (!process.env.ALCHEMY_API_KEY) {
+		throw new Error('Missing ALCHEMY_API_KEY')
 	}
 
 	const PRIVATE_KEY = process.env.PRIVATE_KEY

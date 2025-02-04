@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "openzeppelin-contracts/contracts/utils/Base64.sol";
+import "@openzeppelin/utils/Base64.sol";
 
 library Base64URL {
     function encode(bytes memory data) internal pure returns (string memory) {

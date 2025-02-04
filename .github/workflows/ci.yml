@@ -4,6 +4,7 @@ on:
     push:
         branches:
             - main
+            - dev
 
     pull_request:
         branches:
@@ -12,25 +13,50 @@ on:
 jobs:
     test:
         runs-on: ubuntu-latest
+        env:
+            ALCHEMY_API_KEY: ${{ secrets.ALCHEMY_API_KEY }}
+            SALT: ${{ secrets.SALT }}
 
         steps:
-            - id: checkout
-              name: Checkout
-              uses: actions/checkout@v3
-            - id: setup-bun
-              name: Setup Bun
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Setup Bun
               uses: oven-sh/setup-bun@v1
               with:
                   bun-version: latest
-            - id: install-deps
-              name: Install dependencies
+
+            - name: Install Foundry
+              uses: foundry-rs/foundry-toolchain@v1
+              with:
+                  version: stable
+
+            - name: Install dependencies
+              run: bun install
+
+            - name: Create .env file
               run: |
-                  bun install
-            - id: test
-              name: Run test
-              env:
-                  PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
-                  ALCHEMY_API_KEY: ${{ secrets.ALCHEMY_API_KEY }}
-                  PIMLICO_API_KEY: ${{ secrets.PIMLICO_API_KEY }}
+                  echo "ALCHEMY_API_KEY=${{ secrets.ALCHEMY_API_KEY }}" >> .env
+                  echo "SALT=${{ secrets.SALT }}" >> .env
+
+            - name: Start Docker services
               run: |
-                  bun test
+                  docker compose up -d anvil
+
+                  echo "=== QEMU Info ==="
+                  docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
+                  DOCKER_DEFAULT_PLATFORM=linux/arm64/v8 docker compose up -d alto
+
+                  # Wait for Alto service to be healthy
+                  timeout 60s bash -c 'until wget -q -O - http://localhost:4337/health; do echo "Waiting for Alto to be healthy..."; sleep 2; done'
+
+            - name: Deploy contracts
+              run: bun deploy-contracts
+
+            - name: Run tests
+              run: bun run test
+
+            - name: Stop Docker services
+              if: always()
+              run: docker compose down

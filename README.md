@@ -3,6 +3,13 @@
 A TypeScript library for sending ERC-4337 user operations for smart accounts.
 
 
+### Run Test
+
+```
+docker compose up -d
+bun run test
+```
+
 
 ### Use local dev net for testing
 
