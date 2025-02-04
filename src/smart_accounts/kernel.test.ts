@@ -1,8 +1,11 @@
+import { ECDSA_VALIDATOR_ADDRESS } from '@/address'
+import { PimlicoBundler } from '@/bundler'
 import { type Bundler, type ERC7579Validator, type PaymasterGetter } from '@/core'
-import { ECDSA_VALIDATOR_ADDRESS, ECDSAValidator, Kernel, PimlicoBundler } from '@/index'
+import { ECDSAValidator } from '@/validators'
 import { hexlify, Interface, JsonRpcProvider, randomBytes, toNumber, Wallet } from 'ethers'
 import { CHARITY_PAYMASTER_ADDRESS, COUNTER_ADDRESS, MyPaymaster, setup } from 'test/utils'
 import { beforeAll, describe, expect, it } from 'vitest'
+import { Kernel } from './kernel'
 
 const { logger, chainId, CLIENT_URL, BUNDLER_URL, privateKey } = await setup()
 

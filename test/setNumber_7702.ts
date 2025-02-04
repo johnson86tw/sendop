@@ -1,8 +1,10 @@
 import { sendop } from '@/core'
-import { ECDSA_VALIDATOR_ADDRESS, MyAccount, PimlicoBundler } from '@/index'
 import { ECDSAValidator } from '@/validators/ecdsa_validator'
 import { Interface, JsonRpcProvider, toNumber, Wallet } from 'ethers'
 import { CHARITY_PAYMASTER_ADDRESS, COUNTER_ADDRESS, MyPaymaster, setup } from './utils'
+import { PimlicoBundler } from '@/bundler'
+import { MyAccount } from '@/smart_accounts'
+import { ECDSA_VALIDATOR_ADDRESS } from '@/address'
 
 // error: AccountAccessUnauthorized()
 

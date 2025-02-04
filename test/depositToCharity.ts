@@ -1,7 +1,7 @@
-import { getEntryPointContract } from '@/index'
 import { formatEther, JsonRpcProvider, parseEther, Wallet } from 'ethers'
 import { CHARITY_PAYMASTER_ADDRESS } from './utils/test_address'
 import { setup } from './utils/setup'
+import { getEntryPointContract } from '@/utils'
 
 const { CLIENT_URL, privateKey, chainId, logger } = await setup()
 
