@@ -40,3 +40,10 @@ services:
         depends_on:
             anvil:
                 condition: service_healthy
+    hello-world:
+        image: docker.io/library/hello-world
+        depends_on:
+            alto:
+                condition: service_healthy
+            anvil:
+                condition: service_healthy
