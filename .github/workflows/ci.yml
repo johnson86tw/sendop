@@ -51,6 +51,9 @@ jobs:
             - name: Deploy contracts
               run: bun deploy-contracts
 
+            - name: Build project
+              run: bun run build
+
             - name: Run tests
               run: bun run test
 
