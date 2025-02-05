@@ -41,18 +41,18 @@ jobs:
 
             - name: Start Docker services
               run: |
-                  docker compose up -d anvil
+                  docker compose up -d
 
-                  echo "=== QEMU Info ==="
-                  docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
-
-                  DOCKER_DEFAULT_PLATFORM=linux/arm64/v8 docker compose up -d alto
-
-                  # Wait for Alto service to be healthy
-                  timeout 60s bash -c 'until wget -q -O - http://localhost:4337/health; do echo "Waiting for Alto to be healthy..."; sleep 2; done'
+            - name: Install Forge dependencies
+              run: |
+                  cd contracts/
+                  forge soldeer install
 
             - name: Deploy contracts
               run: bun deploy-contracts
+
+            - name: Build project
+              run: bun run build
 
             - name: Run tests
               run: bun run test
