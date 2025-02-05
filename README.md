@@ -1,7 +1,6 @@
 # sendop.js
 
-A TypeScript library for sending ERC-4337 user operations for smart accounts.
-
+A TypeScript library for sending user operations for ERC-4337 contracts.
 
 ### Commands
 
