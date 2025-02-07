@@ -22,7 +22,7 @@ bun run build
 
 ### Usage
 
-Send user operation using Kernel Smart Account
+Send a user operation using Kernel Smart Account
 
 ```ts
 const op = await kernel.send([
@@ -35,7 +35,7 @@ const op = await kernel.send([
 const receipt = await op.wait()
 ```
 
-Send user operation to deploy Kernel and make a transaction
+Send a user operation to deploy Kernel and make a transaction
 
 ```ts
 const op = await sendop({
@@ -84,7 +84,7 @@ const op = await sendop({
             return '0xfffffffffffffffffffffffffffffff0000000000000000000000000000000007aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1c'
         },
         async getSignature(userOpHash: Uint8Array) {
-            return await reviewer.signMessage(userOpHash)
+            return await wallet.signMessage(userOpHash)
         },
     },
 })
