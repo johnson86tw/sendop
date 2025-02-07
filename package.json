@@ -1,6 +1,6 @@
 {
 	"name": "sendop",
-	"version": "0.0.5",
+	"version": "0.1.0",
 	"description": "A TypeScript library for sending user operations for ERC-4337 contracts.",
 	"author": "Johnson Chen <johnson86tw@gmail.com>",
 	"repository": "https://github.com/johnson86tw/sendop",
