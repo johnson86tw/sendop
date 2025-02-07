@@ -6,7 +6,7 @@
 	"repository": "https://github.com/johnson86tw/sendop",
 	"bugs": "https://github.com/johnson86tw/sendop/issues",
 	"homepage": "https://github.com/johnson86tw/sendop#readme",
-	"license": "",
+	"license": "MIT",
 	"keywords": [
 		"account abstraction",
 		"ethers"
