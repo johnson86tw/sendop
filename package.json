@@ -17,7 +17,8 @@
 	"scripts": {
 		"build": "vite build",
 		"test": "vitest --run",
-		"deploy-contracts": "forge script --root contracts contracts/script/deploy-contracts.s.sol --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --rpc-url http://localhost:8545 --broadcast"
+		"deploy-contracts:local": "forge script --root contracts contracts/script/deploy-contracts.s.sol --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --rpc-url http://localhost:8545 --broadcast",
+		"deploy-contracts:sepolia": "forge script --root contracts contracts/script/deploy-contracts.s.sol --account dev --rpc-url $sepolia --broadcast"
 	},
 	"type": "module",
 	"files": [

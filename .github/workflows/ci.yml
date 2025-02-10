@@ -49,7 +49,7 @@ jobs:
                   forge soldeer install
 
             - name: Deploy contracts
-              run: bun deploy-contracts
+              run: bun deploy-contracts:local
 
             - name: Build project
               run: bun run build
