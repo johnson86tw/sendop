@@ -37,9 +37,14 @@ export class RpcProvider {
 		const data = await response.json()
 		// console.log('data', data)
 		if (data.error) {
+			// Note that data.error.data is specific to Alchemy
 			const errorMessage = data.error.code
-				? `JSON-RPC Error: ${request.method} (${data.error.code}): ${data.error.message}`
-				: `JSON-RPC Error: ${request.method}: ${data.error.message}`
+				? `JSON-RPC Error: ${request.method} (${data.error.code}): ${data.error.message}${
+						data.error.data ? ` - ${JSON.stringify(data.error.data)}` : ''
+				  }`
+				: `JSON-RPC Error: ${request.method}: ${data.error.message}${
+						data.error.data ? ` - ${JSON.stringify(data.error.data)}` : ''
+				  }`
 			throw new Error(errorMessage)
 		}
 
