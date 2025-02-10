@@ -19,7 +19,7 @@ export class RpcProvider {
 	}
 
 	async send(request: RpcRequest) {
-		// 	console.log('Sending request:', request)
+		// console.log('Sending request:', request)
 
 		const response = await fetch(this.url, {
 			method: 'post',
@@ -35,6 +35,7 @@ export class RpcProvider {
 		})
 
 		const data = await response.json()
+		// console.log('data', data)
 		if (data.error) {
 			const errorMessage = data.error.code
 				? `JSON-RPC Error: ${request.method} (${data.error.code}): ${data.error.message}`

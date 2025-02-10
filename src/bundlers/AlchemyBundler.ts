@@ -1,6 +1,7 @@
 import type { Bundler, UserOp, UserOpReceipt } from '@/core'
 import { ENTRY_POINT_V07 } from '@/core'
 import { RpcProvider } from '@/utils'
+import { hexlify, toBeHex } from 'ethers'
 
 export class AlchemyBundler implements Bundler {
 	public chainId: string
@@ -14,10 +15,11 @@ export class AlchemyBundler implements Bundler {
 	}
 
 	async getGasValues(userOp: UserOp) {
-		// Get gas price: baseFeePerGas + priorityFeePerGas
-		const gasPrice = (await this.bundler.send({ method: 'eth_gasPrice' })) as string // hex string
-		if (!gasPrice || gasPrice === '0x0' || gasPrice === '0x') {
-			throw new Error('Invalid gas price response from bundler')
+		// Get baseFeePerGas
+		const result = await this.bundler.send({ method: 'eth_getBlockByNumber', params: ['latest', true] })
+		const baseFeePerGas = result.baseFeePerGas
+		if (!baseFeePerGas || baseFeePerGas === '0x0' || baseFeePerGas === '0x') {
+			throw new Error('Invalid baseFeePerGas response from bundler')
 		}
 
 		// Get maxPriorityFeePerGas
@@ -26,8 +28,10 @@ export class AlchemyBundler implements Bundler {
 			throw new Error('Invalid maxPriorityFeePerGas response from bundler')
 		}
 
-		// eth_estimateUserOperationGas
-		userOp.maxFeePerGas = gasPrice
+		const maxFeePerGas = BigInt(baseFeePerGas) + BigInt(maxPriorityFeePerGas)
+
+		// Send eth_estimateUserOperationGas
+		userOp.maxFeePerGas = toBeHex(maxFeePerGas)
 		const estimateGas = await this.bundler.send({
 			method: 'eth_estimateUserOperationGas',
 			params: [userOp, ENTRY_POINT_V07],
