@@ -22,8 +22,30 @@ const logger = createConsola({
 // await consola.prompt("Deploy to the production?", {
 //   type
 
+export function getEnv() {
+	if (!process.env.ALCHEMY_API_KEY) {
+		throw new Error('Missing ALCHEMY_API_KEY')
+	}
+
+	const PRIVATE_KEY = process.env.PRIVATE_KEY
+	const ALCHEMY_API_KEY = process.env.ALCHEMY_API_KEY
+	const PIMLICO_API_KEY = process.env.PIMLICO_API_KEY
+	const SALT = process.env.SALT || '0x0000000000000000000000000000000000000000000000000000000000000001'
+	const CHAIN_ID = process.env.CHAIN_ID
+	const PIMLICO_SPONSORSHIP_POLICY_ID = process.env.PIMLICO_SPONSORSHIP_POLICY_ID
+
+	return {
+		PRIVATE_KEY,
+		ALCHEMY_API_KEY,
+		PIMLICO_API_KEY,
+		SALT,
+		CHAIN_ID,
+		PIMLICO_SPONSORSHIP_POLICY_ID,
+	}
+}
+
 export async function setup(options?: { chainId?: string }) {
-	const { PRIVATE_KEY, ALCHEMY_API_KEY, PIMLICO_API_KEY, SALT, CHAIN_ID } = getEnv()
+	const { PRIVATE_KEY, ALCHEMY_API_KEY, PIMLICO_API_KEY, SALT, CHAIN_ID, PIMLICO_SPONSORSHIP_POLICY_ID } = getEnv()
 
 	const getClientUrl = (chainId: string) => {
 		// Default to localhost
@@ -86,26 +108,7 @@ export async function setup(options?: { chainId?: string }) {
 		BUNDLER_URL,
 		privateKey,
 		SALT,
-	}
-}
-
-export function getEnv() {
-	if (!process.env.ALCHEMY_API_KEY) {
-		throw new Error('Missing ALCHEMY_API_KEY')
-	}
-
-	const PRIVATE_KEY = process.env.PRIVATE_KEY
-	const ALCHEMY_API_KEY = process.env.ALCHEMY_API_KEY
-	const PIMLICO_API_KEY = process.env.PIMLICO_API_KEY
-	const SALT = process.env.SALT || '0x0000000000000000000000000000000000000000000000000000000000000001'
-	const CHAIN_ID = process.env.CHAIN_ID
-
-	return {
-		PRIVATE_KEY,
-		ALCHEMY_API_KEY,
-		PIMLICO_API_KEY,
-		SALT,
-		CHAIN_ID,
+		PIMLICO_SPONSORSHIP_POLICY_ID,
 	}
 }
 

@@ -10,8 +10,6 @@ export interface Bundler {
 		preVerificationGas: string
 		verificationGasLimit: string
 		callGasLimit: string
-		paymasterVerificationGasLimit: string
-		paymasterPostOpGasLimit: string
 	}>
 	sendUserOperation(userOp: UserOp): Promise<string>
 	getUserOperationReceipt(hash: string): Promise<UserOpReceipt>
