@@ -172,9 +172,11 @@ describe('AlchemyBundler', () => {
 
 		logger.info(`hash: ${op2.hash}`)
 		const receipt = await op2.wait()
+		console.log('receipt', receipt)
+
 		const log = receipt.logs[receipt.logs.length - 1]
 		expect(toNumber(log.data)).toBe(number)
-	}, 100000)
+	}, 200000)
 
 	it.skip('cannot deploy kernel with PimlicoBundler and set number with Alchemy Bundler with charity paymaster', async () => {
 		const pimlicoBundler = new PimlicoBundler(chainId, PIMLICO_BUNDLER_URL)

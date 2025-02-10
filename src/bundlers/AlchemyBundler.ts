@@ -1,7 +1,7 @@
 import type { Bundler, UserOp, UserOpReceipt } from '@/core'
 import { ENTRY_POINT_V07 } from '@/core'
 import { RpcProvider } from '@/utils'
-import { hexlify, toBeHex } from 'ethers'
+import { formatUnits, hexlify, parseUnits, toBeHex } from 'ethers'
 
 export class AlchemyBundler implements Bundler {
 	public chainId: string
@@ -48,13 +48,18 @@ export class AlchemyBundler implements Bundler {
 			}
 		}
 
-		return {
-			maxFeePerGas: userOp.maxFeePerGas,
-			maxPriorityFeePerGas: maxPriorityFeePerGas,
-			preVerificationGas: estimateGas.preVerificationGas,
+		const gasValues = {
+			maxFeePerGas: toBeHex(BigInt(userOp.maxFeePerGas) + BigInt(1 * 10 ** 9)),
+			maxPriorityFeePerGas: toBeHex(BigInt(maxPriorityFeePerGas) * 3n),
+			preVerificationGas: toBeHex(BigInt(estimateGas.preVerificationGas) * 3n),
 			verificationGasLimit: estimateGas.verificationGasLimit,
 			callGasLimit: estimateGas.callGasLimit,
 		}
+
+		console.log('baseFeePerGas', baseFeePerGas)
+		console.log('gasValues', gasValues)
+
+		return gasValues
 	}
 
 	async sendUserOperation(userOp: UserOp): Promise<string> {
