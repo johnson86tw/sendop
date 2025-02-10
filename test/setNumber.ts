@@ -4,8 +4,8 @@ import { ECDSAValidator } from '@/validators/ecdsa_validator'
 import { Interface, JsonRpcProvider, toNumber, Wallet } from 'ethers'
 import { CHARITY_PAYMASTER_ADDRESS, COUNTER_ADDRESS, MyPaymaster, setup } from './utils'
 import { ECDSA_VALIDATOR_ADDRESS } from '@/address'
-import { AlchemyBundler } from '@/AlchemyBundler'
-import { PimlicoBundler } from '@/bundler'
+import { AlchemyBundler } from '@/bundlers/AlchemyBundler'
+import { PimlicoBundler } from '@/bundlers/PimlicoBundler'
 
 const { logger, chainId, CLIENT_URL, BUNDLER_URL, privateKey } = await setup({ chainId: '11155111' })
 logger.info(`Chain ID: ${chainId}`)

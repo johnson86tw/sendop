@@ -4,7 +4,7 @@ import { JsonRpcProvider, Wallet, ZeroAddress } from 'ethers'
 import { CHARITY_PAYMASTER_ADDRESS, MyPaymaster, setup } from 'test/utils'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { MyAccount } from './my_account'
-import { PimlicoBundler } from '@/bundler'
+import { PimlicoBundler } from '@/bundlers/PimlicoBundler'
 import { ECDSA_VALIDATOR_ADDRESS } from '@/address'
 
 const { logger, chainId, CLIENT_URL, BUNDLER_URL, privateKey } = await setup()

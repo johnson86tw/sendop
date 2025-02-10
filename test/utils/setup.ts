@@ -72,6 +72,8 @@ export async function setup(options?: { chainId?: string }) {
 	const chainId = options?.chainId || CHAIN_ID || 'local'
 
 	const CLIENT_URL = getClientUrl(chainId)
+
+	// TODO: Distinguish between Pimlico and Alchemy
 	const BUNDLER_URL = getBundlerUrl(chainId)
 
 	// If using local network, fetch actual chainId from the network
@@ -108,6 +110,8 @@ export async function setup(options?: { chainId?: string }) {
 		BUNDLER_URL,
 		privateKey,
 		SALT,
+		ALCHEMY_API_KEY,
+		PIMLICO_API_KEY,
 		PIMLICO_SPONSORSHIP_POLICY_ID,
 	}
 }

@@ -3,7 +3,7 @@ import { CHARITY_PAYMASTER_ADDRESS, COUNTER_ADDRESS, MyPaymaster, PimlicoPaymast
 import { beforeAll, describe, expect, it } from 'vitest'
 import { sendop } from './sendop'
 import type { Bundler, ERC7579Validator, PaymasterGetter } from './types'
-import { PimlicoBundler } from '@/bundler'
+import { PimlicoBundler } from '@/bundlers/PimlicoBundler'
 import { ECDSAValidator } from '@/validators'
 import { ECDSA_VALIDATOR_ADDRESS } from '@/address'
 import { Kernel } from '@/smart_accounts'
