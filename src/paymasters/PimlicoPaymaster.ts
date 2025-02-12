@@ -1,6 +1,6 @@
 import type { GetPaymasterDataResult, GetPaymasterStubDataResult, PaymasterGetter, UserOp } from '@/core'
 import { ENTRY_POINT_V07 } from '@/core'
-import { RpcProvider } from '@/utils/rpc_provider'
+import { RpcProvider } from '@/RpcProvider'
 import { toBeHex } from 'ethers'
 
 export class PimlicoPaymaster implements PaymasterGetter {
