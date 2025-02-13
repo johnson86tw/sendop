@@ -1,8 +1,7 @@
-import { Wallet } from 'ethers'
-import { describe, expect, it } from 'vitest'
-import { RpcProvider } from './RpcProvider'
 import { setup } from 'test/utils'
-import { HttpError, JsonRpcError, SendopError } from './error'
+import { describe, expect, it } from 'vitest'
+import { SendopError } from './error'
+import { JsonRpcError, RpcProvider } from './RpcProvider'
 
 const { BUNDLER_URL } = await setup()
 

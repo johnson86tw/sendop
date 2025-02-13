@@ -61,11 +61,20 @@ export async function setup(options?: { chainId?: string }) {
 		throw new Error('Invalid chainId')
 	}
 
-	const getBundlerUrl = (chainId: string) => {
-		if (chainId === 'local') {
-			return 'http://localhost:4337'
+	const getBundlerUrl = (chainId: string, source: 'pimlico' | 'alchemy' = 'pimlico') => {
+		switch (chainId) {
+			case 'local':
+				return 'http://localhost:4337'
+			case '11155111':
+				switch (source) {
+					case 'pimlico':
+						return `https://api.pimlico.io/v2/${chainId}/rpc?apikey=${PIMLICO_API_KEY}`
+					case 'alchemy':
+						return `https://eth-sepolia.g.alchemy.com/v2/${ALCHEMY_API_KEY}`
+				}
+			default:
+				throw new Error('getBundlerUrl: Invalid chainId')
 		}
-		return `https://api.pimlico.io/v2/${chainId}/rpc?apikey=${PIMLICO_API_KEY}`
 	}
 
 	// Priority: setup({chainId}) > .env CHAIN_ID > 'local'
@@ -75,6 +84,8 @@ export async function setup(options?: { chainId?: string }) {
 
 	// TODO: Distinguish between Pimlico and Alchemy
 	const BUNDLER_URL = getBundlerUrl(chainId)
+	const PIMLICO_BUNDLER_URL = getBundlerUrl(chainId, 'pimlico')
+	const ALCHEMY_BUNDLER_URL = getBundlerUrl(chainId, 'alchemy')
 
 	// If using local network, fetch actual chainId from the network
 	let actualChainId = chainId
@@ -108,6 +119,8 @@ export async function setup(options?: { chainId?: string }) {
 		chainId: actualChainId,
 		CLIENT_URL,
 		BUNDLER_URL,
+		ALCHEMY_BUNDLER_URL,
+		PIMLICO_BUNDLER_URL,
 		privateKey,
 		SALT,
 		ALCHEMY_API_KEY,

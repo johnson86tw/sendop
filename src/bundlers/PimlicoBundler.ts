@@ -1,5 +1,6 @@
 import type { Bundler, UserOp, UserOpReceipt } from '@/core'
 import { ENTRY_POINT_V07 } from '@/core'
+import { SendopError } from '@/error'
 import { RpcProvider } from '@/utils'
 
 export class PimlicoBundler implements Bundler {
@@ -18,7 +19,7 @@ export class PimlicoBundler implements Bundler {
 		// Get gas price
 		const curGasPrice = await this.bundler.send({ method: 'pimlico_getUserOperationGasPrice' })
 		if (!curGasPrice?.standard?.maxFeePerGas) {
-			throw new Error('Invalid gas price response from bundler')
+			throw new PimlicoBundlerError('Invalid gas price response from bundler')
 		}
 
 		// Set and estimate gas
@@ -28,14 +29,14 @@ export class PimlicoBundler implements Bundler {
 			params: [userOp, ENTRY_POINT_V07],
 		})
 		if (!estimateGas) {
-			throw new Error('Empty response from gas estimation')
+			throw new PimlicoBundlerError('Empty response from gas estimation')
 		}
 
 		// Validate estimation results
 		const requiredFields = ['preVerificationGas', 'verificationGasLimit', 'callGasLimit']
 		for (const field of requiredFields) {
 			if (!(field in estimateGas)) {
-				throw new Error(`Missing required gas estimation field: ${field}`)
+				throw new PimlicoBundlerError(`Missing required gas estimation field: ${field}`)
 			}
 		}
 
@@ -59,5 +60,12 @@ export class PimlicoBundler implements Bundler {
 
 	async getUserOperationReceipt(hash: string): Promise<UserOpReceipt> {
 		return await this.bundler.send({ method: 'eth_getUserOperationReceipt', params: [hash] })
+	}
+}
+
+export class PimlicoBundlerError extends SendopError {
+	constructor(message: string, options?: ErrorOptions) {
+		super(message, options)
+		this.name = 'PimlicoBundlerError'
 	}
 }

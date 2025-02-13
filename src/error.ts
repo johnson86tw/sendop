@@ -10,20 +10,6 @@ export class SendopError extends Error {
 	}
 }
 
-export class JsonRpcError extends SendopError {
-	constructor(message: string, options?: ErrorOptions) {
-		super(message, options)
-		this.name = 'JsonRpcError'
-	}
-}
-
-export class HttpError extends SendopError {
-	constructor(message: string, options?: ErrorOptions) {
-		super(message, options)
-		this.name = 'HttpError'
-	}
-}
-
 export function normalizeError(unknownError: unknown): Error {
 	let err = new Error(String(unknownError))
 

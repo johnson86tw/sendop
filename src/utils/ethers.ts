@@ -1,6 +1,6 @@
 import { ENTRY_POINT_V07 } from '@/core'
 import type { ContractRunner, ParamType } from 'ethers'
-import { AbiCoder, Contract, Interface, zeroPadBytes, zeroPadValue } from 'ethers'
+import { AbiCoder, Contract, getAddress, Interface, zeroPadBytes, zeroPadValue } from 'ethers'
 
 export const ERC7579Interface = new Interface([
 	'function installModule(uint256 moduleType, address module, bytes calldata initData)',
@@ -53,4 +53,8 @@ export function padRight(data: string, length: number = 32) {
 
 export function abiEncode(types: ReadonlyArray<string | ParamType>, values: ReadonlyArray<any>): string {
 	return new AbiCoder().encode(types, values)
+}
+
+export function isSameAddress(address1: string, address2: string) {
+	return getAddress(address1) === getAddress(address2)
 }

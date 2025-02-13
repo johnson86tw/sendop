@@ -1,9 +1,9 @@
 import { ECDSA_VALIDATOR_ADDRESS } from '@/address'
 import { ENTRY_POINT_V07, getEmptyUserOp, sendop, type Bundler } from '@/core'
 import { Kernel } from '@/smart_accounts'
-import { getEntryPointContract, RpcProvider } from '@/utils'
+import { isSameAddress, RpcProvider } from '@/utils'
 import { ECDSAValidator } from '@/validators'
-import { hexlify, Interface, JsonRpcProvider, parseEther, randomBytes, toNumber, Wallet } from 'ethers'
+import { hexlify, Interface, JsonRpcProvider, randomBytes, toNumber, Wallet } from 'ethers'
 import { CHARITY_PAYMASTER_ADDRESS, COUNTER_ADDRESS, MyPaymaster, setup } from 'test/utils'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { AlchemyBundler } from './AlchemyBundler'
@@ -112,7 +112,7 @@ describe('AlchemyBundler', () => {
 		expect(gasValues.paymasterPostOpGasLimit).toBeUndefined()
 	})
 
-	it('should deploy kernel with PimlicoBundler and set number with Alchemy Bundler without paymaster', async () => {
+	it('should deploy kernel with PimlicoBundler and set number with AlchemyBundler', async () => {
 		const pimlicoBundler = new PimlicoBundler(chainId, PIMLICO_BUNDLER_URL)
 
 		const myPaymaster = new MyPaymaster({
@@ -147,15 +147,6 @@ describe('AlchemyBundler', () => {
 		const code = await client.getCode(deployedAddress)
 		expect(code).not.toBe('0x')
 
-		// deposit 0.01 eth to entrypoint for kernel to set number
-		const entrypoint = getEntryPointContract(signer)
-		const tx = await entrypoint.depositTo(deployedAddress, { value: parseEther('0.01') })
-		await tx.wait()
-
-		// check balance of deployed address
-		const balance = await entrypoint.balanceOf(deployedAddress)
-		expect(balance).toBe(parseEther('0.01'))
-
 		const number = Math.floor(Math.random() * 10000)
 
 		const op2 = await sendop({
@@ -168,74 +159,22 @@ describe('AlchemyBundler', () => {
 				},
 			],
 			opGetter: kernel,
+			pmGetter: myPaymaster,
 		})
+
+		const startTime = Date.now()
 
 		logger.info(`hash: ${op2.hash}`)
 		const receipt = await op2.wait()
-		console.log('receipt', receipt)
+		const duration = (Date.now() - startTime) / 1000
+		logger.info(`Receipt received after ${duration.toFixed(2)} seconds`)
 
-		const log = receipt.logs[receipt.logs.length - 1]
-		expect(toNumber(log.data)).toBe(number)
+		const log = receipt.logs.find(log => isSameAddress(log.address, COUNTER_ADDRESS))
+		expect(log && toNumber(log.data)).toBe(number)
 	}, 200000)
 
-	it.skip('cannot deploy kernel with PimlicoBundler and set number with Alchemy Bundler with charity paymaster', async () => {
-		const pimlicoBundler = new PimlicoBundler(chainId, PIMLICO_BUNDLER_URL)
-
-		const myPaymaster = new MyPaymaster({
-			client,
-			paymasterAddress: CHARITY_PAYMASTER_ADDRESS,
-		})
-
-		const creationOptions = {
-			salt: hexlify(randomBytes(32)),
-			validatorAddress: ECDSA_VALIDATOR_ADDRESS,
-			owner: await new Wallet(privateKey).getAddress(),
-		}
-
-		const deployedAddress = await Kernel.getNewAddress(client, creationOptions)
-
-		const kernel = new Kernel(deployedAddress, {
-			client: new JsonRpcProvider(CLIENT_URL),
-			bundler: pimlicoBundler,
-			erc7579Validator: new ECDSAValidator({
-				address: ECDSA_VALIDATOR_ADDRESS,
-				client,
-				signer,
-			}),
-			pmGetter: myPaymaster,
-		})
-
-		const op = await kernel.deploy(creationOptions)
-		logger.info(`hash: ${op.hash}`)
-		await op.wait()
-		logger.info('deployed address: ', deployedAddress)
-
-		const code = await client.getCode(deployedAddress)
-		expect(code).not.toBe('0x')
-
-		const number = Math.floor(Math.random() * 10000)
-
-		const op2 = await sendop({
-			bundler: alchemyBundler,
-			executions: [
-				{
-					to: COUNTER_ADDRESS,
-					data: new Interface(['function setNumber(uint256)']).encodeFunctionData('setNumber', [number]),
-					value: '0x0',
-				},
-			],
-			opGetter: kernel,
-			pmGetter: myPaymaster,
-		})
-
-		logger.info(`hash: ${op2.hash}`)
-		const receipt = await op2.wait()
-		const log = receipt.logs[receipt.logs.length - 1]
-		expect(toNumber(log.data)).toBe(number)
-	}, 100000)
-
 	// error: JSON-RPC Error: eth_sendUserOperation (-32502): Sender storage at (address: 0xa454cbe9a4077e27684242f88d959ba0ea7657b3 slot: 0xbe55d3a7367afc8f11e8660685ae16561c5dd7f65775e84cb5e06a64601e7d76) accessed during deployment. Factory (or None) must be staked
-	it.skip('cannot deploy kernel with AlchemyBundler', async () => {
+	it.skip('cannot deploy kernel without staking factory', async () => {
 		const creationOptions = {
 			salt: hexlify(randomBytes(32)),
 			validatorAddress: ECDSA_VALIDATOR_ADDRESS,
@@ -273,8 +212,7 @@ describe('AlchemyBundler', () => {
 		expect(code).not.toBe('0x')
 	}, 100000)
 
-	// Alchemy error: Unsupported method: rundler_maxPriorityFeePerGas
-	it.skip('should batch request gas price and maxPriorityFeePerGas', async () => {
+	it.skip('cannot batch request eth_gasPrice and rundler_maxPriorityFeePerGas', async () => {
 		const batchRequests = [{ method: 'eth_gasPrice' }, { method: 'rundler_maxPriorityFeePerGas' }]
 
 		const results = await rpcProvider.sendBatch(batchRequests)

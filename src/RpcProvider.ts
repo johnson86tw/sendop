@@ -1,4 +1,4 @@
-import { HttpError, JsonRpcError, normalizeError, SendopError } from './error'
+import { normalizeError, SendopError } from './error'
 
 export type RpcRequest = {
 	readonly method: string
@@ -107,5 +107,19 @@ export class RpcProvider {
 				method: requests[index].method,
 			}
 		})
+	}
+}
+
+export class JsonRpcError extends SendopError {
+	constructor(message: string, options?: ErrorOptions) {
+		super(message, options)
+		this.name = 'JsonRpcError'
+	}
+}
+
+export class HttpError extends SendopError {
+	constructor(message: string, options?: ErrorOptions) {
+		super(message, options)
+		this.name = 'HttpError'
 	}
 }
