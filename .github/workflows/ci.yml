@@ -38,6 +38,8 @@ jobs:
               run: |
                   echo "ALCHEMY_API_KEY=${{ secrets.ALCHEMY_API_KEY }}" >> .env
                   echo "SALT=${{ secrets.SALT }}" >> .env
+                  echo "PIMLICO_API_KEY=${{ secrets.PIMLICO_API_KEY }}" >> .env
+                  echo "PIMLICO_SPONSORSHIP_POLICY_ID=${{ secrets.PIMLICO_SPONSORSHIP_POLICY_ID }}" >> .env
 
             - name: Start Docker services
               run: |
