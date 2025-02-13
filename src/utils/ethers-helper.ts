@@ -1,4 +1,5 @@
 import { ENTRY_POINT_V07 } from '@/core'
+import { SendopError } from '@/error'
 import type { ContractRunner, ParamType } from 'ethers'
 import { AbiCoder, Contract, getAddress, Interface, zeroPadBytes, zeroPadValue } from 'ethers'
 
@@ -33,7 +34,7 @@ export function is32BytesHexString(data: string) {
 
 export function padLeft(data: string, length: number = 32) {
 	if (!data.startsWith('0x')) {
-		throw new Error('data must start with 0x')
+		throw new EthersHelperError('data must start with 0x in padLeft')
 	}
 	if (data.length % 2 !== 0) {
 		data = data.slice(0, 2) + '0' + data.slice(2)
@@ -43,7 +44,7 @@ export function padLeft(data: string, length: number = 32) {
 
 export function padRight(data: string, length: number = 32) {
 	if (!data.startsWith('0x')) {
-		throw new Error('data must start with 0x')
+		throw new EthersHelperError('data must start with 0x in padRight')
 	}
 	if (data.length % 2 !== 0) {
 		data = data.slice(0, 2) + '0' + data.slice(2)
@@ -57,4 +58,11 @@ export function abiEncode(types: ReadonlyArray<string | ParamType>, values: Read
 
 export function isSameAddress(address1: string, address2: string) {
 	return getAddress(address1) === getAddress(address2)
+}
+
+export class EthersHelperError extends SendopError {
+	constructor(message: string, cause?: Error) {
+		super(message, cause)
+		this.name = 'EthersHelperError'
+	}
 }

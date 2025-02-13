@@ -1,4 +1,5 @@
 import type { ERC7579Validator } from '@/core'
+import { SendopError } from '@/error'
 
 type ConstructorOptions = {
 	address: string
@@ -22,7 +23,7 @@ export class WebAuthnValidator implements ERC7579Validator {
 	async getSignature(userOpHash: Uint8Array) {
 		const signature = prompt('Please input the signature')
 		if (!signature) {
-			throw new Error('Signature is required')
+			throw new WebAuthnValidatorError('Signature is required in getSignature')
 		}
 		return signature
 	}
@@ -30,5 +31,12 @@ export class WebAuthnValidator implements ERC7579Validator {
 	async getAccounts(): Promise<string[]> {
 		// TODO: signer needs to have webauthn public key
 		return []
+	}
+}
+
+export class WebAuthnValidatorError extends SendopError {
+	constructor(message: string, cause?: Error) {
+		super(message, cause)
+		this.name = 'WebAuthnValidatorError'
 	}
 }

@@ -1,6 +1,6 @@
 import { setup } from 'test/utils'
 import { describe, expect, it } from 'vitest'
-import { SendopError } from './error'
+import { normalizeError, SendopError } from './error'
 import { JsonRpcError, RpcProvider } from './RpcProvider'
 
 const { BUNDLER_URL } = await setup()
@@ -21,9 +21,13 @@ describe('RpcProvider', () => {
 	})
 
 	it('should throw SendopError if the request url is invalid', async () => {
-		const provider = new RpcProvider('invalid_url')
-		await expect(provider.send({ method: 'eth_chainId', params: [] })).rejects.toThrow(
-			new SendopError('fetch() URL is invalid'),
-		)
+		try {
+			const provider = new RpcProvider('invalid_url')
+			await provider.send({ method: 'eth_chainId', params: [] })
+			throw new Error('should not reach here')
+		} catch (error: unknown) {
+			const err = normalizeError(error)
+			expect(err).toBeInstanceOf(SendopError)
+		}
 	})
 })

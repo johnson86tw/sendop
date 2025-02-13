@@ -7,7 +7,7 @@ import {
 	type SendOpResult,
 } from '@/core'
 import { SmartAccount } from './interface'
-import { abiEncode, getEntryPointContract, padLeft } from '@/utils/ethers'
+import { abiEncode, getEntryPointContract, padLeft } from '@/utils/ethers-helper'
 import {
 	concat,
 	Contract,
@@ -19,6 +19,7 @@ import {
 	zeroPadValue,
 	type BytesLike,
 } from 'ethers'
+import { SendopError } from '@/error'
 
 const MY_ACCOUNT_FACTORY_ADDRESS = '0xd4650238fcc60f64DfCa4e095dEe0081Dd4734b0'
 
@@ -44,7 +45,7 @@ export class MyAccount extends SmartAccount {
 		const address = await myAccountFactory['getAddress(uint256,address,bytes)'](salt, validatorAddress, owner)
 
 		if (!isAddress(address)) {
-			throw new Error('Failed to get new address')
+			throw new MyAccountError('Failed to get new address in getNewAddress')
 		}
 
 		return address
@@ -139,7 +140,9 @@ export class MyAccount extends SmartAccount {
 		// if one of the execution is to SA itself, it must be a single execution
 		if (executions.some(execution => execution.to === this.address)) {
 			if (executions.length > 1) {
-				throw new Error('If one of the execution is to SA itself, it must be a single execution')
+				throw new MyAccountError(
+					'If one of the execution is to SA itself, it must be a single execution in getCallData',
+				)
 			}
 
 			callData = executions[0].data
@@ -189,7 +192,7 @@ export class MyAccount extends SmartAccount {
 		}
 
 		if (!callData) {
-			throw new Error('Failed to build callData')
+			throw new MyAccountError('Failed to build callData in getCallData')
 		}
 
 		return callData
@@ -224,11 +227,18 @@ export class MyAccount extends SmartAccount {
 					}
 				}
 			}
-			throw new Error('Entry not found in array')
+			throw new MyAccountError('Entry not found in array in getUninstallModuleDeInitData')
 		}
 
 		const deInitData = abiEncode(['address', 'bytes'], [prev, '0x'])
 
 		return deInitData
+	}
+}
+
+export class MyAccountError extends SendopError {
+	constructor(message: string, cause?: Error) {
+		super(message, cause)
+		this.name = 'MyAccountError'
 	}
 }
