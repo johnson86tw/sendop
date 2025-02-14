@@ -1,4 +1,5 @@
 import type { Execution, OperationGetter, PaymasterGetter, SendOpResult } from '@/core'
+import { SendopError } from '@/error'
 import type { JsonRpcProvider } from 'ethers'
 
 export abstract class SmartAccount implements OperationGetter {
@@ -11,12 +12,19 @@ export abstract class SmartAccount implements OperationGetter {
 
 	// static
 	static accountId(): string {
-		throw new Error('accountId is not implemented')
+		throw new SmartAccountError('accountId is not implemented')
 	}
 	static async getNewAddress(client: JsonRpcProvider, creationOptions: any): Promise<string> {
-		throw new Error('getNewAddress is not implemented')
+		throw new SmartAccountError('getNewAddress is not implemented')
 	}
 
 	abstract deploy(creationOptions: any, pmGetter?: PaymasterGetter): Promise<SendOpResult>
 	abstract send(executions: Execution[], pmGetter?: PaymasterGetter): Promise<SendOpResult>
+}
+
+export class SmartAccountError extends SendopError {
+	constructor(message: string, cause?: Error) {
+		super(message, cause)
+		this.name = 'SmartAccountError'
+	}
 }

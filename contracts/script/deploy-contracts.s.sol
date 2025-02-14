@@ -9,8 +9,10 @@ import {IEntryPoint} from "@account-abstraction/contracts/interfaces/IEntryPoint
 import {Counter} from "../src/Counter.sol";
 
 /*
+(in root directory instead of /contracts)
 
-forge script script/deploy-contracts.s.sol --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --rpc-url http://localhost:8545 --broadcast
+forge script --rpc-url http://localhost:8545 --root contracts contracts/script/deploy-contracts.s.sol --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --broadcast
+forge script --rpc-url $sepolia --root contracts contracts/script/deploy-contracts.s.sol --account dev --broadcast --verify
 
 */
 
@@ -35,8 +37,8 @@ contract DeployContracts is Script {
         CharityPaymaster paymaster = new CharityPaymaster{salt: salt}();
         console.log("CharityPaymaster deployed at", address(paymaster));
 
-        IEntryPoint(0x0000000071727De22E5E9d8BAf0edAc6f37da032).depositTo{value: 10 ether}(address(paymaster));
-        console.log("Deposited 10 ETH to EntryPoint for paymaster");
+        IEntryPoint(0x0000000071727De22E5E9d8BAf0edAc6f37da032).depositTo{value: 1 ether}(address(paymaster));
+        console.log("Deposited 1 ETH to EntryPoint for paymaster");
 
         vm.stopBroadcast();
     }

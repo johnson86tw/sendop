@@ -1,5 +1,5 @@
 import { ECDSA_VALIDATOR_ADDRESS } from '@/address'
-import { PimlicoBundler } from '@/bundler'
+import { PimlicoBundler } from '@/bundlers/PimlicoBundler'
 import { type Bundler, type ERC7579Validator, type PaymasterGetter } from '@/core'
 import { ECDSAValidator } from '@/validators'
 import { hexlify, Interface, JsonRpcProvider, randomBytes, toNumber, Wallet } from 'ethers'

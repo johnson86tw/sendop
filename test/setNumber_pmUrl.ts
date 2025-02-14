@@ -3,7 +3,7 @@ import { MyAccount } from '@/smart_accounts/my_account'
 import { ECDSAValidator } from '@/validators/ecdsa_validator'
 import { Interface, JsonRpcProvider, toNumber, Wallet } from 'ethers'
 import { COUNTER_ADDRESS, PimlicoPaymaster, setup } from './utils'
-import { PimlicoBundler } from '@/bundler'
+import { PimlicoBundler } from '@/bundlers/PimlicoBundler'
 import { ECDSA_VALIDATOR_ADDRESS } from '@/address'
 
 // only works for sepolia

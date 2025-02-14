@@ -60,8 +60,6 @@ export async function sendop(options: {
 	userOp.preVerificationGas = gasValues.preVerificationGas
 	userOp.verificationGasLimit = gasValues.verificationGasLimit
 	userOp.callGasLimit = gasValues.callGasLimit
-	userOp.paymasterVerificationGasLimit = gasValues.paymasterVerificationGasLimit
-	userOp.paymasterPostOpGasLimit = gasValues.paymasterPostOpGasLimit
 
 	// if pm && !isFinal, get pmData
 	if (pmGetter && pmGetter.getPaymasterData && !pmIsFinal) {

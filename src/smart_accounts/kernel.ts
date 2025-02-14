@@ -1,9 +1,10 @@
 import type { Bundler, ERC7579Validator, Execution, PaymasterGetter, SendOpResult } from '@/core'
 import { SmartAccount } from './interface'
-import { abiEncode, getEntryPointContract, is32BytesHexString, padLeft } from '@/utils/ethers'
+import { abiEncode, getEntryPointContract, is32BytesHexString, padLeft } from '@/utils/ethers-helper'
 import type { BytesLike } from 'ethers'
 import { concat, Contract, hexlify, Interface, isAddress, JsonRpcProvider, toBeHex, ZeroAddress } from 'ethers'
 import { sendop } from '@/core'
+import { SendopError } from '@/error'
 
 const KERNEL_FACTORY_ADDRESS = '0xaac5D4240AF87249B3f71BC8E4A2cae074A3E419'
 
@@ -22,14 +23,14 @@ export class Kernel extends SmartAccount {
 		const { salt, validatorAddress, owner } = creationOptions
 
 		if (!is32BytesHexString(salt)) {
-			throw new Error('Salt should be 32 bytes')
+			throw new KernelError('Salt should be 32 bytes in getNewAddress')
 		}
 
 		const kernelFactory = new Contract(KERNEL_FACTORY_ADDRESS, this.kernelFactoryInterface, client)
 
 		function getInitializeData(validator: string, owner: string) {
 			if (!isAddress(validator) || !isAddress(owner)) {
-				throw new Error('Invalid address', { cause: { validator, owner } })
+				throw new KernelError('Invalid address in getInitializeData')
 			}
 
 			return Kernel.kernelInterface.encodeFunctionData('initialize', [
@@ -47,7 +48,7 @@ export class Kernel extends SmartAccount {
 		)
 
 		if (!isAddress(address)) {
-			throw new Error('Failed to get new address')
+			throw new KernelError('Invalid address in getNewAddress')
 		}
 
 		return address
@@ -130,7 +131,7 @@ export class Kernel extends SmartAccount {
 
 	private getCreateAccountData(validator: string, owner: string, salt: string) {
 		if (!is32BytesHexString(salt)) {
-			throw new Error('Salt should be 32 bytes')
+			throw new KernelError('Salt should be 32 bytes in getCreateAccountData')
 		}
 
 		return this.kernelFactoryInterface().encodeFunctionData('createAccount', [
@@ -141,7 +142,7 @@ export class Kernel extends SmartAccount {
 
 	private getInitializeData(validator: string, owner: string) {
 		if (!isAddress(validator) || !isAddress(owner)) {
-			throw new Error('Invalid address', { cause: { validator, owner } })
+			throw new KernelError('Invalid address in getInitializeData')
 		}
 
 		return this.kernelInterface().encodeFunctionData('initialize', [
@@ -210,5 +211,12 @@ export class Kernel extends SmartAccount {
 
 	async getUninstallModuleDeInitData() {
 		return '0x'
+	}
+}
+
+export class KernelError extends SendopError {
+	constructor(message: string, cause?: Error) {
+		super(message, cause)
+		this.name = 'KernelError'
 	}
 }

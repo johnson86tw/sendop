@@ -22,8 +22,30 @@ const logger = createConsola({
 // await consola.prompt("Deploy to the production?", {
 //   type
 
+export function getEnv() {
+	if (!process.env.ALCHEMY_API_KEY) {
+		throw new Error('Missing ALCHEMY_API_KEY')
+	}
+
+	const PRIVATE_KEY = process.env.PRIVATE_KEY
+	const ALCHEMY_API_KEY = process.env.ALCHEMY_API_KEY
+	const PIMLICO_API_KEY = process.env.PIMLICO_API_KEY
+	const SALT = process.env.SALT || '0x0000000000000000000000000000000000000000000000000000000000000001'
+	const CHAIN_ID = process.env.CHAIN_ID
+	const PIMLICO_SPONSORSHIP_POLICY_ID = process.env.PIMLICO_SPONSORSHIP_POLICY_ID
+
+	return {
+		PRIVATE_KEY,
+		ALCHEMY_API_KEY,
+		PIMLICO_API_KEY,
+		SALT,
+		CHAIN_ID,
+		PIMLICO_SPONSORSHIP_POLICY_ID,
+	}
+}
+
 export async function setup(options?: { chainId?: string }) {
-	const { PRIVATE_KEY, ALCHEMY_API_KEY, PIMLICO_API_KEY, SALT, CHAIN_ID } = getEnv()
+	const { PRIVATE_KEY, ALCHEMY_API_KEY, PIMLICO_API_KEY, SALT, CHAIN_ID, PIMLICO_SPONSORSHIP_POLICY_ID } = getEnv()
 
 	const getClientUrl = (chainId: string) => {
 		// Default to localhost
@@ -39,18 +61,31 @@ export async function setup(options?: { chainId?: string }) {
 		throw new Error('Invalid chainId')
 	}
 
-	const getBundlerUrl = (chainId: string) => {
-		if (chainId === 'local') {
-			return 'http://localhost:4337'
+	const getBundlerUrl = (chainId: string, source: 'pimlico' | 'alchemy' = 'pimlico') => {
+		switch (chainId) {
+			case 'local':
+				return 'http://localhost:4337'
+			case '11155111':
+				switch (source) {
+					case 'pimlico':
+						return `https://api.pimlico.io/v2/${chainId}/rpc?apikey=${PIMLICO_API_KEY}`
+					case 'alchemy':
+						return `https://eth-sepolia.g.alchemy.com/v2/${ALCHEMY_API_KEY}`
+				}
+			default:
+				throw new Error('getBundlerUrl: Invalid chainId')
 		}
-		return `https://api.pimlico.io/v2/${chainId}/rpc?apikey=${PIMLICO_API_KEY}`
 	}
 
 	// Priority: setup({chainId}) > .env CHAIN_ID > 'local'
 	const chainId = options?.chainId || CHAIN_ID || 'local'
 
 	const CLIENT_URL = getClientUrl(chainId)
+
+	// TODO: Distinguish between Pimlico and Alchemy
 	const BUNDLER_URL = getBundlerUrl(chainId)
+	const PIMLICO_BUNDLER_URL = getBundlerUrl(chainId, 'pimlico')
+	const ALCHEMY_BUNDLER_URL = getBundlerUrl(chainId, 'alchemy')
 
 	// If using local network, fetch actual chainId from the network
 	let actualChainId = chainId
@@ -84,28 +119,13 @@ export async function setup(options?: { chainId?: string }) {
 		chainId: actualChainId,
 		CLIENT_URL,
 		BUNDLER_URL,
+		ALCHEMY_BUNDLER_URL,
+		PIMLICO_BUNDLER_URL,
 		privateKey,
 		SALT,
-	}
-}
-
-export function getEnv() {
-	if (!process.env.ALCHEMY_API_KEY) {
-		throw new Error('Missing ALCHEMY_API_KEY')
-	}
-
-	const PRIVATE_KEY = process.env.PRIVATE_KEY
-	const ALCHEMY_API_KEY = process.env.ALCHEMY_API_KEY
-	const PIMLICO_API_KEY = process.env.PIMLICO_API_KEY
-	const SALT = process.env.SALT || '0x0000000000000000000000000000000000000000000000000000000000000001'
-	const CHAIN_ID = process.env.CHAIN_ID
-
-	return {
-		PRIVATE_KEY,
 		ALCHEMY_API_KEY,
 		PIMLICO_API_KEY,
-		SALT,
-		CHAIN_ID,
+		PIMLICO_SPONSORSHIP_POLICY_ID,
 	}
 }
 
