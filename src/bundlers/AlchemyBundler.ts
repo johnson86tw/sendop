@@ -16,23 +16,26 @@ export class AlchemyBundler implements Bundler {
 	}
 
 	/**
-	 * TODO: Alchemy's account-kit method: https://github.com/alchemyplatform/aa-sdk/blob/f7c7911cdc1f690db4107e21956469955c990bc8/account-kit/infra/src/middleware/feeEstimator.ts#L34-L54
+	 * Refer to Alchemy's account-kit method: https://github.com/alchemyplatform/aa-sdk/blob/f7c7911cdc1f690db4107e21956469955c990bc8/account-kit/infra/src/middleware/feeEstimator.ts#L34-L54
 	 */
 	async getGasValues(userOp: UserOp) {
-		// Get gas price
-		const gasPrice = await this.bundler.send({ method: 'eth_gasPrice' })
-		if (!gasPrice || gasPrice === '0x0' || gasPrice === '0x') {
-			throw new AlchemyBundlerError('Invalid gasPrice response from bundler')
+		const [block, maxPriorityFeePerGas] = await Promise.all([
+			this.bundler.send({ method: 'eth_getBlockByNumber', params: ['latest', true] }),
+			this.bundler.send({ method: 'rundler_maxPriorityFeePerGas' }),
+		])
+
+		if (!block || !block.baseFeePerGas) {
+			throw new AlchemyBundlerError('Missing baseFeePerGas in block')
 		}
 
-		// Get maxPriorityFeePerGas
-		const maxPriorityFeePerGas = await this.bundler.send({ method: 'rundler_maxPriorityFeePerGas' })
 		if (!maxPriorityFeePerGas || maxPriorityFeePerGas === '0x0' || maxPriorityFeePerGas === '0x') {
 			throw new AlchemyBundlerError('Invalid maxPriorityFeePerGas response from bundler')
 		}
 
+		const maxFeePerGas = (BigInt(block.baseFeePerGas) * 150n) / 100n + BigInt(maxPriorityFeePerGas)
+
 		// Send eth_estimateUserOperationGas
-		userOp.maxFeePerGas = toBeHex(gasPrice)
+		userOp.maxFeePerGas = toBeHex(maxFeePerGas)
 		const estimateGas = await this.bundler.send({
 			method: 'eth_estimateUserOperationGas',
 			params: [userOp, ENTRY_POINT_V07],
@@ -50,8 +53,8 @@ export class AlchemyBundler implements Bundler {
 		}
 
 		const gasValues = {
-			maxFeePerGas: toBeHex((BigInt(gasPrice) * 160n) / 100n + BigInt(maxPriorityFeePerGas)),
-			maxPriorityFeePerGas: toBeHex(BigInt(maxPriorityFeePerGas)),
+			maxFeePerGas: toBeHex(maxFeePerGas),
+			maxPriorityFeePerGas: toBeHex(maxPriorityFeePerGas),
 			preVerificationGas: toBeHex(estimateGas.preVerificationGas),
 			verificationGasLimit: estimateGas.verificationGasLimit,
 			callGasLimit: estimateGas.callGasLimit,
