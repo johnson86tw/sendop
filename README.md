@@ -93,3 +93,7 @@ const receipt = await op.wait()
 
 - For complete examples, please refer to *.test.ts
 
+## Publish Flow
+1. Commit v0.x.x
+2. Push to a branch and create a pull request
+3. If the tests pass, merge it and publish to npm
