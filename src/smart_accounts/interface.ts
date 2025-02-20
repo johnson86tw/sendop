@@ -1,4 +1,4 @@
-import type { Execution, OperationGetter, PaymasterGetter, SendOpResult } from '@/core'
+import type { Execution, OperationGetter, PaymasterGetter, SendOpResult, UserOp } from '@/core'
 import { SendopError } from '@/error'
 import type { JsonRpcProvider } from 'ethers'
 
@@ -7,8 +7,8 @@ export abstract class SmartAccount implements OperationGetter {
 	abstract getSender(): Promise<string> | string
 	abstract getNonce(): Promise<string> | string
 	abstract getCallData(executions: Execution[]): Promise<string> | string
-	abstract getDummySignature(): Promise<string> | string
-	abstract getSignature(userOpHash: Uint8Array): Promise<string> | string
+	abstract getDummySignature(userOp: UserOp): Promise<string> | string
+	abstract getSignature(userOpHash: Uint8Array, userOp: UserOp): Promise<string> | string
 
 	// static
 	static accountId(): string {

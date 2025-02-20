@@ -5,6 +5,7 @@ import {
 	type Execution,
 	type PaymasterGetter,
 	type SendOpResult,
+	type UserOp,
 } from '@/core'
 import { SmartAccount } from './interface'
 import { abiEncode, getEntryPointContract, padLeft } from '@/utils/ethers-helper'
@@ -78,12 +79,12 @@ export class MyAccount extends SmartAccount {
 		return this.address
 	}
 
-	async getDummySignature() {
-		return this.erc7579Validator.getDummySignature()
+	async getDummySignature(userOp: UserOp) {
+		return this.erc7579Validator.getDummySignature(userOp)
 	}
 
-	async getSignature(hash: Uint8Array) {
-		return this.erc7579Validator.getSignature(hash)
+	async getSignature(userOpHash: Uint8Array, userOp: UserOp) {
+		return this.erc7579Validator.getSignature(userOpHash, userOp)
 	}
 
 	async getNonce() {
