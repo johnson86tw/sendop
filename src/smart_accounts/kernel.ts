@@ -1,10 +1,10 @@
-import type { Bundler, ERC7579Validator, Execution, PaymasterGetter, SendOpResult } from '@/core'
-import { SmartAccount } from './interface'
+import type { Bundler, ERC7579Validator, Execution, PaymasterGetter, SendOpResult, UserOp } from '@/core'
+import { sendop } from '@/core'
+import { SendopError } from '@/error'
 import { abiEncode, getEntryPointContract, is32BytesHexString, padLeft } from '@/utils/ethers-helper'
 import type { BytesLike } from 'ethers'
 import { concat, Contract, hexlify, Interface, isAddress, JsonRpcProvider, toBeHex, ZeroAddress } from 'ethers'
-import { sendop } from '@/core'
-import { SendopError } from '@/error'
+import { SmartAccount } from './interface'
 
 const KERNEL_FACTORY_ADDRESS = '0xaac5D4240AF87249B3f71BC8E4A2cae074A3E419'
 
@@ -91,12 +91,12 @@ export class Kernel extends SmartAccount {
 		return this.address
 	}
 
-	async getDummySignature() {
-		return this.erc7579Validator.getDummySignature()
+	async getDummySignature(userOp: UserOp) {
+		return this.erc7579Validator.getDummySignature(userOp)
 	}
 
-	async getSignature(hash: Uint8Array) {
-		return this.erc7579Validator.getSignature(hash)
+	async getSignature(userOpHash: Uint8Array, userOp: UserOp) {
+		return this.erc7579Validator.getSignature(userOpHash, userOp)
 	}
 
 	async getNonce() {

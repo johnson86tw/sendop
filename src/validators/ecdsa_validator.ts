@@ -1,5 +1,5 @@
-import { Contract, getBytes, JsonRpcProvider, type Signer, EventLog } from 'ethers'
-import type { ERC7579Validator } from '@/core'
+import type { ERC7579Validator, UserOp } from '@/core'
+import { Contract, EventLog, JsonRpcProvider, type Signer } from 'ethers'
 
 type ConstructorOptions = {
 	address: string
@@ -30,11 +30,11 @@ export class ECDSAValidator implements ERC7579Validator {
 		return this.#address
 	}
 
-	getDummySignature() {
+	getDummySignature(userOp: UserOp) {
 		return '0xfffffffffffffffffffffffffffffff0000000000000000000000000000000007aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1c'
 	}
 
-	async getSignature(userOpHash: Uint8Array) {
+	async getSignature(userOpHash: Uint8Array, userOp: UserOp) {
 		return await this.#signer.signMessage(userOpHash)
 	}
 

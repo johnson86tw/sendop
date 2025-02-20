@@ -38,7 +38,6 @@ export async function sendop(options: {
 
 	userOp.nonce = await opGetter.getNonce()
 	userOp.callData = await opGetter.getCallData(executions)
-	userOp.signature = await opGetter.getDummySignature()
 
 	// if pm, get pmStubData
 	let pmIsFinal = false
@@ -50,6 +49,8 @@ export async function sendop(options: {
 		userOp.paymasterPostOpGasLimit = pmStubData.paymasterPostOpGasLimit ?? '0x0'
 		pmIsFinal = pmStubData.isFinal ?? false
 	}
+
+	userOp.signature = await opGetter.getDummySignature(userOp)
 
 	// esitmate userOp
 	// Note: user operation max fee per gas must be larger than 0 during gas estimation
@@ -70,7 +71,7 @@ export async function sendop(options: {
 
 	// sign userOp
 	const userOpHash = getUserOpHash(packUserOp(userOp), ENTRY_POINT_V07, bundler.chainId)
-	userOp.signature = await opGetter.getSignature(getBytes(userOpHash))
+	userOp.signature = await opGetter.getSignature(getBytes(userOpHash), userOp)
 
 	// send userOp
 	await bundler.sendUserOperation(userOp)

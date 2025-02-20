@@ -93,7 +93,7 @@ describe('AlchemyBundler', () => {
 
 		userOp.nonce = await kernel.getNonce()
 		userOp.callData = await kernel.getCallData([])
-		userOp.signature = await kernel.getDummySignature()
+		userOp.signature = await kernel.getDummySignature(userOp)
 		userOp.maxFeePerGas = gasPrice
 		userOp.maxPriorityFeePerGas = maxPriorityFeePerGas
 
