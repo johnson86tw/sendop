@@ -23,4 +23,10 @@ describe('Error', () => {
 		}
 		expect(result).toContain(`(sendop@${PACKAGE_VERSION})`)
 	})
+
+	// TODO:
+	it.skip('pimlico', () => {
+		const errMsg = 'eth_sendUserOperation (-32500): UserOperation reverted with reason: AA23 reverted - 0x85e4d8d6'
+		// 0x85e4d8d6 == SubmissionNotClaimable()
+	})
 })
