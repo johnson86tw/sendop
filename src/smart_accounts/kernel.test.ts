@@ -92,7 +92,7 @@ describe('Kernel', () => {
 		})
 	})
 
-	describe('Operations', () => {
+	describe('Deploy Kernel and setNumber', () => {
 		let kernel: Kernel
 		let creationOptions: any
 		let deployedAddress: string
