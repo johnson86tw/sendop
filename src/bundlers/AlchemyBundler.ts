@@ -1,27 +1,21 @@
-import type { Bundler, UserOp, UserOpReceipt } from '@/core'
+import type { UserOp } from '@/core'
 import { ENTRY_POINT_V07 } from '@/core'
 import { SendopError } from '@/error'
-import { RpcProvider } from '@/utils'
 import { toBeHex } from 'ethers'
+import { BaseBundler, type BundlerOptions, type GasValues } from './BaseBundler'
 
-export class AlchemyBundler implements Bundler {
-	public chainId: string
-	url: string
-	bundler: RpcProvider
-
-	constructor(chainId: string, url: string) {
-		this.chainId = chainId
-		this.url = url
-		this.bundler = new RpcProvider(url)
+export class AlchemyBundler extends BaseBundler {
+	constructor(chainId: string, url: string, options?: BundlerOptions) {
+		super(chainId, url, options)
 	}
 
 	/**
 	 * Refer to Alchemy's account-kit method: https://github.com/alchemyplatform/aa-sdk/blob/f7c7911cdc1f690db4107e21956469955c990bc8/account-kit/infra/src/middleware/feeEstimator.ts#L34-L54
 	 */
-	async getGasValues(userOp: UserOp) {
+	async getGasValues(userOp: UserOp): Promise<GasValues> {
 		const [block, maxPriorityFeePerGas] = await Promise.all([
-			this.bundler.send({ method: 'eth_getBlockByNumber', params: ['latest', true] }),
-			this.bundler.send({ method: 'rundler_maxPriorityFeePerGas' }),
+			this.rpcProvider.send({ method: 'eth_getBlockByNumber', params: ['latest', true] }),
+			this.rpcProvider.send({ method: 'rundler_maxPriorityFeePerGas' }),
 		])
 
 		if (!block || !block.baseFeePerGas) {
@@ -36,23 +30,19 @@ export class AlchemyBundler implements Bundler {
 
 		// Send eth_estimateUserOperationGas
 		userOp.maxFeePerGas = toBeHex(maxFeePerGas)
-		const estimateGas = await this.bundler.send({
-			method: 'eth_estimateUserOperationGas',
-			params: [userOp, ENTRY_POINT_V07],
-		})
-		if (!estimateGas) {
-			throw new AlchemyBundlerError('Empty response from gas estimation')
+
+		let estimateGas
+		if (this.skipGasEstimation) {
+			estimateGas = this.getDefaultGasEstimation()
+		} else {
+			estimateGas = await this.rpcProvider.send({
+				method: 'eth_estimateUserOperationGas',
+				params: [userOp, ENTRY_POINT_V07],
+			})
+			this.validateGasEstimation(estimateGas)
 		}
 
-		// Validate estimation results
-		const requiredFields = ['preVerificationGas', 'verificationGasLimit', 'callGasLimit']
-		for (const field of requiredFields) {
-			if (!(field in estimateGas)) {
-				throw new AlchemyBundlerError(`Missing required gas estimation field: ${field}`)
-			}
-		}
-
-		const gasValues = {
+		let gasValues: GasValues = {
 			maxFeePerGas: toBeHex(maxFeePerGas),
 			maxPriorityFeePerGas: toBeHex(maxPriorityFeePerGas),
 			preVerificationGas: toBeHex(estimateGas.preVerificationGas),
@@ -60,18 +50,11 @@ export class AlchemyBundler implements Bundler {
 			callGasLimit: estimateGas.callGasLimit,
 		}
 
+		if (this.gasValuesHook) {
+			gasValues = await this.gasValuesHook(gasValues)
+		}
+
 		return gasValues
-	}
-
-	async sendUserOperation(userOp: UserOp): Promise<string> {
-		return await this.bundler.send({
-			method: 'eth_sendUserOperation',
-			params: [userOp, ENTRY_POINT_V07],
-		})
-	}
-
-	async getUserOperationReceipt(hash: string): Promise<UserOpReceipt> {
-		return await this.bundler.send({ method: 'eth_getUserOperationReceipt', params: [hash] })
 	}
 }
 
