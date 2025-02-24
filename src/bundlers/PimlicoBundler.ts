@@ -1,65 +1,49 @@
-import type { Bundler, UserOp, UserOpReceipt } from '@/core'
+import type { UserOp } from '@/core'
 import { ENTRY_POINT_V07 } from '@/core'
 import { SendopError } from '@/error'
-import { RpcProvider } from '@/utils'
+import { toBeHex } from 'ethers'
+import { BaseBundler, type BundlerOptions, type GasValues } from './BaseBundler'
 
-export class PimlicoBundler implements Bundler {
-	chainId: string
-	url: string
-	bundler: RpcProvider
-
-	constructor(chainId: string, url: string) {
-		// TODO: check if the bundler url is valid
-		this.chainId = chainId
-		this.url = url
-		this.bundler = new RpcProvider(url)
+export class PimlicoBundler extends BaseBundler {
+	constructor(chainId: string, url: string, options?: BundlerOptions) {
+		super(chainId, url, options)
 	}
 
-	async getGasValues(userOp: UserOp) {
+	async getGasValues(userOp: UserOp): Promise<GasValues> {
 		// Get gas price
-		const curGasPrice = await this.bundler.send({ method: 'pimlico_getUserOperationGasPrice' })
+		const curGasPrice = await this.rpcProvider.send({ method: 'pimlico_getUserOperationGasPrice' })
 		if (!curGasPrice?.standard?.maxFeePerGas) {
-			throw new PimlicoBundlerError('Invalid gas price response from bundler')
+			throw new PimlicoBundlerError('Invalid gas price response from rpcProvider')
 		}
 
-		// Set and estimate gas
+		// Set gas price
 		userOp.maxFeePerGas = curGasPrice.standard.maxFeePerGas
-		const estimateGas = await this.bundler.send({
-			method: 'eth_estimateUserOperationGas',
-			params: [userOp, ENTRY_POINT_V07],
-		})
-		if (!estimateGas) {
-			throw new PimlicoBundlerError('Empty response from gas estimation')
+
+		// Get gas estimation
+		let estimateGas
+		if (this.skipGasEstimation) {
+			estimateGas = this.getDefaultGasEstimation()
+		} else {
+			estimateGas = await this.rpcProvider.send({
+				method: 'eth_estimateUserOperationGas',
+				params: [userOp, ENTRY_POINT_V07],
+			})
+			this.validateGasEstimation(estimateGas)
 		}
 
-		// Validate estimation results
-		const requiredFields = ['preVerificationGas', 'verificationGasLimit', 'callGasLimit']
-		for (const field of requiredFields) {
-			if (!(field in estimateGas)) {
-				throw new PimlicoBundlerError(`Missing required gas estimation field: ${field}`)
-			}
-		}
-
-		return {
-			maxFeePerGas: userOp.maxFeePerGas,
-			maxPriorityFeePerGas: curGasPrice.standard.maxPriorityFeePerGas,
-			preVerificationGas: estimateGas.preVerificationGas,
+		let gasValues: GasValues = {
+			maxFeePerGas: toBeHex(curGasPrice.standard.maxFeePerGas),
+			maxPriorityFeePerGas: toBeHex(curGasPrice.standard.maxPriorityFeePerGas),
+			preVerificationGas: toBeHex(estimateGas.preVerificationGas),
 			verificationGasLimit: estimateGas.verificationGasLimit,
 			callGasLimit: estimateGas.callGasLimit,
-			paymasterVerificationGasLimit: estimateGas.paymasterVerificationGasLimit,
-			paymasterPostOpGasLimit: estimateGas.paymasterPostOpGasLimit,
 		}
-	}
 
-	async sendUserOperation(userOp: UserOp): Promise<string> {
-		return await this.bundler.send({
-			method: 'eth_sendUserOperation',
-			params: [userOp, ENTRY_POINT_V07],
-		})
-	}
+		if (this.gasValuesHook) {
+			gasValues = await this.gasValuesHook(gasValues)
+		}
 
-	async getUserOperationReceipt(hash: string): Promise<UserOpReceipt> {
-		return await this.bundler.send({ method: 'eth_getUserOperationReceipt', params: [hash] })
+		return gasValues
 	}
 }
 
