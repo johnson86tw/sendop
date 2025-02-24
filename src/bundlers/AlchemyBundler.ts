@@ -4,15 +4,34 @@ import { SendopError } from '@/error'
 import { RpcProvider } from '@/utils'
 import { toBeHex } from 'ethers'
 
+type GasValues = {
+	maxFeePerGas: string
+	maxPriorityFeePerGas: string
+	preVerificationGas: string
+	verificationGasLimit: string
+	callGasLimit: string
+}
+
 export class AlchemyBundler implements Bundler {
 	public chainId: string
 	url: string
 	bundler: RpcProvider
+	skipGasEstimation: boolean
+	gasValuesHook?: (gasValues: GasValues) => Promise<GasValues>
 
-	constructor(chainId: string, url: string) {
+	constructor(
+		chainId: string,
+		url: string,
+		options?: {
+			skipGasEstimation?: boolean
+			gasValuesHook?: (gasValues: GasValues) => Promise<GasValues>
+		},
+	) {
 		this.chainId = chainId
 		this.url = url
 		this.bundler = new RpcProvider(url)
+		this.skipGasEstimation = options?.skipGasEstimation ?? false
+		this.gasValuesHook = options?.gasValuesHook ?? undefined
 	}
 
 	/**
@@ -36,28 +55,43 @@ export class AlchemyBundler implements Bundler {
 
 		// Send eth_estimateUserOperationGas
 		userOp.maxFeePerGas = toBeHex(maxFeePerGas)
-		const estimateGas = await this.bundler.send({
-			method: 'eth_estimateUserOperationGas',
-			params: [userOp, ENTRY_POINT_V07],
-		})
-		if (!estimateGas) {
-			throw new AlchemyBundlerError('Empty response from gas estimation')
-		}
 
-		// Validate estimation results
-		const requiredFields = ['preVerificationGas', 'verificationGasLimit', 'callGasLimit']
-		for (const field of requiredFields) {
-			if (!(field in estimateGas)) {
-				throw new AlchemyBundlerError(`Missing required gas estimation field: ${field}`)
+		let estimateGas
+
+		if (this.skipGasEstimation) {
+			estimateGas = {
+				preVerificationGas: '0xf423f', // 999_999
+				verificationGasLimit: '0xf423f',
+				callGasLimit: '0xf423f',
+			}
+		} else {
+			estimateGas = await this.bundler.send({
+				method: 'eth_estimateUserOperationGas',
+				params: [userOp, ENTRY_POINT_V07],
+			})
+			if (!estimateGas) {
+				throw new AlchemyBundlerError('Empty response from gas estimation')
+			}
+
+			// Validate estimation results
+			const requiredFields = ['preVerificationGas', 'verificationGasLimit', 'callGasLimit']
+			for (const field of requiredFields) {
+				if (!(field in estimateGas)) {
+					throw new AlchemyBundlerError(`Missing required gas estimation field: ${field}`)
+				}
 			}
 		}
 
-		const gasValues = {
+		let gasValues = {
 			maxFeePerGas: toBeHex(maxFeePerGas),
 			maxPriorityFeePerGas: toBeHex(maxPriorityFeePerGas),
 			preVerificationGas: toBeHex(estimateGas.preVerificationGas),
 			verificationGasLimit: estimateGas.verificationGasLimit,
 			callGasLimit: estimateGas.callGasLimit,
+		}
+
+		if (this.gasValuesHook) {
+			gasValues = await this.gasValuesHook(gasValues)
 		}
 
 		return gasValues
